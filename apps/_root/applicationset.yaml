@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-apps
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        # Must match var.repo_url in bootstrap/argo/terraform.tfvars.
+        # REPLACE this URL with your repo before pushing.
+        repoURL: https://github.com/laucoin/Atlas.git
+        revision: main
+        directories:
+          - path: apps/*
+          - path: apps/_root
+            exclude: true
+  template:
+    metadata:
+      name: "{{path.basename}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/laucoin/Atlas.git
+        targetRevision: main
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

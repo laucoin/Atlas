@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in.
+# terraform.tfvars is gitignored — never commit it.
+
+# HTTPS or SSH URL of this repo, reachable from inside the cluster.
+# Must be pushed to a remote BEFORE running `tofu apply` here.
+# For SSH, also register the deploy key/repo creds in Argo CD
+# (configs.repositories block in the argo-cd Helm chart, or via UI).
+repo_url = "https://github.com/<owner>/Atlas.git"
+
+# Branch, tag, or commit SHA Argo tracks.
+# repo_revision = "main"
+
+# Optional overrides
+# kubeconfig_path = "../../kubeconfig"
+# argocd_version  = "9.5.21"

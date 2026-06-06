@@ -1,0 +1,54 @@
+# Infisical needs the `infisical-bootstrap` Secret in the infisical
+# namespace BEFORE this Application syncs. Create it ONCE out-of-band:
+#
+#   kubectl create secret generic infisical-bootstrap \
+#     --namespace infisical \
+#     --from-literal=ENCRYPTION_KEY=$(openssl rand -hex 16) \
+#     --from-literal=AUTH_SECRET=$(openssl rand -base64 32 | tr -d '\n=')
+#
+# ENCRYPTION_KEY (32-char hex) protects Infisical's at-rest data;
+# AUTH_SECRET signs its JWTs. These are the bottom of the secrets
+# bootstrap chain — keep both values in an out-of-band vault (hardware
+# token, 1Password, encrypted file). They never migrate into Infisical.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infisical
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+    chart: infisical-standalone
+    targetRevision: 1.9.0
+    helm:
+      releaseName: infisical
+      valuesObject:
+        infisical:
+          replicaCount: 1
+          # Infisical 1.x loads its env (ENCRYPTION_KEY, AUTH_SECRET) from a
+          # single Secret named by kubeSecretRef. The old infisical.envFrom
+          # list is no longer honored by the chart.
+          kubeSecretRef: infisical-bootstrap
+        postgresql:
+          enabled: true
+        redis:
+          enabled: true
+        # North-south routing is handled by Traefik (see infisical-ingressroute
+        # .yaml). Disable the chart's own Ingress and its bundled ingress-nginx
+        # controller, both of which are enabled by default in 1.x.
+        ingress:
+          enabled: false
+          nginx:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infisical
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-tls
+  namespace: authentik
+spec:
+  secretName: authentik-tls
+  # Switch issuerRef.name to letsencrypt-staging to debug ACME without
+  # burning production rate limits; restore to letsencrypt-prod for
+  # browser-trusted certs.
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - auth.atlas.laucoin.fr

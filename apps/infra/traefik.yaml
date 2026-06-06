@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 41.0.0
+    helm:
+      releaseName: traefik
+      valuesObject:
+        deployment:
+          replicas: 1
+        service:
+          type: LoadBalancer
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
+        providers:
+          kubernetesCRD:
+            enabled: true
+            allowCrossNamespace: true
+          kubernetesIngress:
+            enabled: true
+        metrics:
+          prometheus:
+            enabled: true
+            entryPoint: metrics
+            serviceMonitor:
+              enabled: true
+        ports:
+          web:
+            http:
+              redirections:
+                entryPoint:
+                  to: websecure
+                  scheme: https
+          websecure:
+            http:
+              tls:
+                enabled: true
+          metrics:
+            port: 9100
+            expose:
+              default: false
+            exposedPort: 9100
+            protocol: TCP
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

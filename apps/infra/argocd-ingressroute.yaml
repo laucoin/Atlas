@@ -1,0 +1,23 @@
+# Routes argo.atlas.laucoin.fr to the argocd-server Service. Traefik
+# terminates TLS (websecure) and forwards plain HTTP to argocd-server:80,
+# which runs in insecure mode (configs.params "server.insecure" = "true"
+# in bootstrap/argo/main.tf) — without this route Traefik has no host match
+# for argo.atlas.laucoin.fr and returns 404.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: argocd
+  namespace: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`argo.atlas.laucoin.fr`)
+      services:
+        - name: argocd-server
+          port: 80
+  tls:
+    secretName: argocd-tls

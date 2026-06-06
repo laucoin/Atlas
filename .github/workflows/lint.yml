@@ -1,0 +1,74 @@
+---
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yamllint==1.35.1
+      - run: yamllint -s .
+
+  tofu-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: "1.8.0"
+      - name: Check formatting
+        run: |
+          if find . -type f \( -name '*.tf' -o -name '*.tfvars' \) | head -1 | grep -q .; then
+            tofu fmt -check -recursive
+          else
+            echo "No .tf files yet — skipping."
+          fi
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+      - name: Lint charts
+        run: |
+          shopt -s nullglob
+          charts=(charts/*/)
+          if [ ${#charts[@]} -eq 0 ]; then
+            echo "No charts yet — skipping."
+            exit 0
+          fi
+          for c in "${charts[@]}"; do
+            helm lint "$c"
+          done
+
+  kubeconform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubeconform
+        run: |
+          curl -sSLo /tmp/kc.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kc.tar.gz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/
+      - name: Validate manifests
+        run: |
+          mapfile -t files < <(find apps charts -type f \( -name '*.yaml' -o -name '*.yml' \) 2>/dev/null)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No manifests yet — skipping."
+            exit 0
+          fi
+          kubeconform -strict -ignore-missing-schemas -summary "${files[@]}"

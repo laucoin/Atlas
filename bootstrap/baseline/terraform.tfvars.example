@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in.
+# terraform.tfvars is gitignored — never commit it.
+
+# IP MetalLB advertises via L2. For a single-node setup,
+# this is typically the same as the node's LAN IP.
+lb_ip = "10.0.0.10"
+
+# Used by Let's Encrypt for expiry notifications.
+acme_email = "you@example.com"
+
+# Optional overrides
+# metallb_version                = "0.16.1"
+# cert_manager_version           = "v1.20.2"
+# local_path_provisioner_version = "0.0.37"
+# kubeconfig_path                = "../../kubeconfig"

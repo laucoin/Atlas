@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    # node-exporter (hostNetwork/hostPID/hostPath/hostPort) and promtail
+    # (hostPath) are node-level agents that can't satisfy the cluster-wide
+    # "baseline" Pod Security Standard Talos enforces. Without this label
+    # their DaemonSet pods are rejected at admission ("violates PodSecurity
+    # baseline"), node-exporter stays 0-ready, and that wedges the whole
+    # kube-prometheus-stack Argo sync. Same treatment as local-path-storage.
+    pod-security.kubernetes.io/enforce: privileged

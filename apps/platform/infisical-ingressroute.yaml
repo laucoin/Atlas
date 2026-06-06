@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: infisical
+  namespace: infisical
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`infisical.atlas.laucoin.fr`)
+      services:
+        # Must match the Service the infisical-standalone chart actually
+        # creates: <release>-infisical-standalone-infisical on port 8080.
+        - name: infisical-infisical-standalone-infisical
+          port: 8080
+  tls:
+    secretName: infisical-tls

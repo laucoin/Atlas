@@ -1,0 +1,42 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.claude/
+.idea/
+*.swp
+*.swo
+
+# OpenTofu / Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+*.lock.hcl
+*.auto.tfvars
+
+# Helm
+charts/*/charts/
+
+# Cluster credentials — never commit unencrypted
+kubeconfig
+kubeconfig.*
+talosconfig
+talosconfig.*
+*.decrypted.yaml
+*.decrypted.yml
+age.key
+*.age
+
+# Python (pre-commit virtualenv)
+.venv/
+__pycache__/
+*.py[cod]

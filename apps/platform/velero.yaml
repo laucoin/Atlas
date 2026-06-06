@@ -1,0 +1,65 @@
+# Velero ships PV contents + cluster manifests offsite via an S3-
+# compatible bucket. Before this Application syncs:
+#   - Provision the bucket (Backblaze B2, AWS S3, Wasabi, Cloudflare R2,
+#     MinIO elsewhere, …) and create access creds scoped to it.
+#   - Replace the three REPLACE_ME_* placeholders below
+#     (bucket name, region, s3Url).
+#   - Populate VELERO_S3_ACCESS_KEY and VELERO_S3_SECRET_KEY in
+#     Infisical (atlas / prod) — velero-externalsecret.yaml renders
+#     them into the AWS-credentials-file format the chart expects.
+#
+# Backups are file-system based (restic/node-agent) because local-path
+# PVCs have no CSI snapshot capability. defaultVolumesToFsBackup makes
+# every volume opt-in by default; exclude with the annotation
+# `backup.velero.io/backup-volumes-excludes` on the pod spec.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://vmware-tanzu.github.io/helm-charts
+    chart: velero
+    targetRevision: 12.0.3
+    helm:
+      releaseName: velero
+      valuesObject:
+        credentials:
+          useSecret: true
+          existingSecret: velero-credentials
+        configuration:
+          backupStorageLocation:
+            - name: default
+              provider: aws
+              bucket: altas-backups
+              config:
+                region: rbx
+                s3ForcePathStyle: true
+                s3Url: https://s3.rbx.io.cloud.ovh.net
+          volumeSnapshotLocation:
+            - name: default
+              provider: aws
+              config:
+                region: rbx
+          defaultVolumesToFsBackup: true
+        deployNodeAgent: true
+        initContainers:
+          - name: velero-plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.10.0
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: velero
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

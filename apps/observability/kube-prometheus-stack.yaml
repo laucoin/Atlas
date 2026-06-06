@@ -1,0 +1,144 @@
+# Grafana admin + Authentik OIDC creds come from the `grafana-bootstrap`
+# Secret in the monitoring namespace, materialized from Infisical (see
+# ./grafana-externalsecret.yaml). Populate in Infisical (atlas / prod):
+#   GRAFANA_ADMIN_USER
+#   GRAFANA_ADMIN_PASSWORD
+#   GRAFANA_OIDC_CLIENT_ID
+#   GRAFANA_OIDC_CLIENT_SECRET
+#
+# First create the OAuth2/OpenID Provider + Application in Authentik with
+# redirect URI https://grafana.atlas.laucoin.fr/login/generic_oauth ;
+# capture the client_id and client_secret it issues.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 86.2.3
+    helm:
+      releaseName: kube-prometheus-stack
+      valuesObject:
+        prometheus:
+          prometheusSpec:
+            # local-path PVs are hostPath-backed, so kubelet ignores the
+            # pod's fsGroup (2000) and never chowns the volume. The Prometheus
+            # container mounts the data volume with subPath=prometheus-db, and
+            # kubelet creates that subPath dir root-owned, so Prometheus
+            # (uid 1000) can't write it → "open /prometheus/queries.active:
+            # permission denied" → CrashLoopBackOff.
+            # Chown the data dir before Prometheus starts; runs every boot so
+            # it self-heals and survives re-provisioning. The mount MUST use
+            # the same subPath as the Prometheus container — kubelet creates
+            # the subPath dir before this init container runs, so we chown the
+            # exact directory Prometheus will use (chowning the volume root is
+            # not enough; the root-owned subPath dir is created afterward).
+            initContainers:
+              - name: chown-prometheus-data
+                image: busybox:1.37
+                command: ["sh", "-c", "chown -R 1000:2000 /prometheus"]
+                securityContext:
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop: ["ALL"]
+                    add: ["CHOWN"]
+                  seccompProfile:
+                    type: RuntimeDefault
+                volumeMounts:
+                  - name: prometheus-kube-prometheus-stack-prometheus-db
+                    mountPath: /prometheus
+                    subPath: prometheus-db
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}
+            podMonitorSelector: {}
+            podMonitorNamespaceSelector: {}
+            ruleSelector: {}
+            ruleNamespaceSelector: {}
+            retention: 14d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes: [ReadWriteOnce]
+                  resources:
+                    requests:
+                      storage: 30Gi
+        alertmanager:
+          alertmanagerSpec:
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes: [ReadWriteOnce]
+                  resources:
+                    requests:
+                      storage: 2Gi
+        grafana:
+          admin:
+            existingSecret: grafana-bootstrap
+            userKey: admin-user
+            passwordKey: admin-password
+          persistence:
+            enabled: true
+            storageClassName: local-path
+            size: 5Gi
+          sidecar:
+            dashboards:
+              enabled: true
+              searchNamespace: ALL
+              label: grafana_dashboard
+            datasources:
+              enabled: true
+              searchNamespace: ALL
+          extraSecretMounts:
+            - name: grafana-oidc
+              secretName: grafana-bootstrap
+              defaultMode: 0440
+              mountPath: /etc/secrets/oidc
+              readOnly: true
+          grafana.ini:
+            server:
+              root_url: https://grafana.atlas.laucoin.fr
+            auth.generic_oauth:
+              enabled: true
+              name: Authentik
+              allow_sign_up: true
+              # `groups` scope carries the user's Authentik groups so Grafana
+              # can map them to org roles below. Authentik only emits the
+              # `groups` claim if the OAuth2/OpenID provider has a groups scope
+              # mapping attached AND the `grafana-admins` group exists (both
+              # configured in the Authentik UI — they are not in this repo).
+              scopes: "openid profile email groups"
+              # Members of the `grafana-admins` Authentik group become Grafana
+              # Admins (which exposes Explore + full control); everyone else
+              # falls back to Viewer. role_attribute_strict stays off so an
+              # unmatched user still logs in as Viewer rather than being denied.
+              role_attribute_path: "contains(groups[*], 'grafana-admins') && 'Admin' || 'Viewer'"
+              auth_url: https://auth.atlas.laucoin.fr/application/o/authorize/
+              token_url: https://auth.atlas.laucoin.fr/application/o/token/
+              api_url: https://auth.atlas.laucoin.fr/application/o/userinfo/
+              client_id: "$__file{/etc/secrets/oidc/oidc-client-id}"
+              client_secret: "$__file{/etc/secrets/oidc/oidc-client-secret}"
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              access: proxy
+              url: http://loki.monitoring.svc.cluster.local:3100
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

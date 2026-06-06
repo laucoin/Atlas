@@ -1,0 +1,17 @@
+machine:
+  network:
+    hostname: ${hostname}
+    interfaces:
+      - interface: ${interface}
+        addresses:
+          - ${cidr}
+        routes:
+          - network: 0.0.0.0/0
+            gateway: ${gateway}
+    nameservers:
+%{ for ns in nameservers ~}
+      - ${ns}
+%{ endfor ~}
+  time:
+    servers:
+      - pool.ntp.org

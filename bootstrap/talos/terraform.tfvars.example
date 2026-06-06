@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and fill in for your environment.
+# terraform.tfvars is gitignored — never commit it.
+
+# Final LAN IP the node will use after Talos config is applied.
+# If the node boots into maintenance with a different DHCP IP,
+# match this static IP to that address (or apply twice).
+node_ip       = "10.0.0.10"
+node_hostname = "atlas"
+install_disk  = "/dev/nvme0n1"
+
+network = {
+  interface   = "eno1"
+  cidr        = "10.0.0.10/24"
+  gateway     = "10.0.0.1"
+  nameservers = ["1.1.1.1", "9.9.9.9"]
+}
+
+# Optional overrides
+# talos_version      = "v1.8.2"
+# kubernetes_version = "1.31.2"

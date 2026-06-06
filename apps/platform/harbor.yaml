@@ -1,0 +1,65 @@
+# Harbor's admin password is sourced from Infisical via ESO
+# (see ./harbor-externalsecret.yaml). Populate HARBOR_ADMIN_PASSWORD in
+# your Infisical project (atlas / prod) before this Application syncs.
+#
+# OIDC integration with Authentik is configured post-install through
+# the Harbor UI (Configuration → Authentication → OIDC), against an
+# OAuth2 Provider you create in Authentik first. The client ID/secret
+# can later move into Infisical and be wired via a second ExternalSecret.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.goharbor.io
+    chart: harbor
+    targetRevision: 1.19.1
+    helm:
+      releaseName: harbor
+      valuesObject:
+        expose:
+          type: clusterIP
+          tls:
+            enabled: false
+        externalURL: https://harbor.atlas.laucoin.fr
+        existingSecretAdminPassword: harbor-bootstrap
+        existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+        persistence:
+          enabled: true
+          persistentVolumeClaim:
+            registry:
+              storageClass: local-path
+              size: 50Gi
+            jobservice:
+              jobLog:
+                storageClass: local-path
+                size: 1Gi
+            database:
+              storageClass: local-path
+              size: 5Gi
+            redis:
+              storageClass: local-path
+              size: 1Gi
+            trivy:
+              storageClass: local-path
+              size: 5Gi
+        trivy:
+          enabled: true
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: harbor
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

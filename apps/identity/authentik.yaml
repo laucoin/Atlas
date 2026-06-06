@@ -1,0 +1,55 @@
+# The `authentik-bootstrap` Secret is sourced from Infisical via ESO
+# (see ./authentik-externalsecret.yaml). Populate these keys in your
+# Infisical project (atlas / prod) before this Application's pods run:
+#   AUTHENTIK_SECRET_KEY         (openssl rand -base64 60)
+#   AUTHENTIK_BOOTSTRAP_PASSWORD (openssl rand -base64 36)
+#   AUTHENTIK_BOOTSTRAP_TOKEN    (openssl rand -base64 36)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.goauthentik.io
+    chart: authentik
+    targetRevision: 2026.5.3
+    helm:
+      releaseName: authentik
+      valuesObject:
+        global:
+          envFrom:
+            - secretRef:
+                name: authentik-bootstrap
+        authentik:
+          log_level: info
+          bootstrap_email: admin@atlas.laucoin.fr
+        server:
+          ingress:
+            enabled: false
+        postgresql:
+          enabled: true
+          # Share one password between the bundled PostgreSQL and the
+          # Authentik server (which reads AUTHENTIK_POSTGRESQL__PASSWORD via
+          # global.envFrom). Without this the chart auto-generates a throwaway
+          # password the server never receives -> "fe_sendauth: no password
+          # supplied". See getting-started.md §8.1.
+          auth:
+            username: authentik
+            database: authentik
+            existingSecret: authentik-bootstrap
+            secretKeys:
+              adminPasswordKey: AUTHENTIK_POSTGRESQL__PASSWORD
+              userPasswordKey: AUTHENTIK_POSTGRESQL__PASSWORD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: authentik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
