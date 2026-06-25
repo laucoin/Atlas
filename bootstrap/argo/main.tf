@@ -15,10 +15,11 @@ resource "helm_release" "argocd" {
           "server.insecure" = "true"
         },
         cm = {
-          "url"         = "https://argo.atlas.laucoin.fr"
-          "oidc.config" = <<-EOT
+          "url"           = "https://argo.atlas.laucoin.fr"
+          "admin.enabled" = var.disable_local_admin ? "false" : "true"
+          "oidc.config"   = <<-EOT
               name: Authentik
-              issuer: https://auth.atlas.laucoin.fr/application/o/argo-cd/
+              issuer: https://authentik.atlas.laucoin.fr/application/o/argo-cd/
               clientID: $argocd-oidc:clientId
               clientSecret: $argocd-oidc:clientSecret
               requestedScopes: ["openid", "profile", "email", "groups"]
