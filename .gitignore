@@ -4,7 +4,9 @@ Thumbs.db
 
 # Editors
 .vscode/
-.claude/
+# Ignore local Claude config but keep shareable skills under version control.
+.claude/*
+!.claude/skills/
 .idea/
 *.swp
 *.swo
