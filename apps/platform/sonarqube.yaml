@@ -40,6 +40,30 @@ spec:
         # init container.
         initSysctl:
           enabled: false
+        # The chart's init-fs container chowns data/temp/logs to 1000:0 but NOT
+        # /opt/sonarqube/extensions. local-path (hostPath) volumes ignore POSIX
+        # fsGroup, so the extensions subPath stays root-owned and SonarQube
+        # (UID 1000) can't create extensions/downloads — "Background
+        # initialization failed. Stopping SonarQube". Chown it explicitly here,
+        # mirroring init-fs's baseline-compatible securityContext.
+        extraInitContainers:
+          - name: init-fs-extensions
+            image: busybox:1.36
+            command: ["sh", "-c", "chown -R 1000:0 /opt/sonarqube/extensions"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              seccompProfile:
+                type: RuntimeDefault
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN"]
+            volumeMounts:
+              - name: sonarqube
+                mountPath: /opt/sonarqube/extensions
+                subPath: extensions
         jdbcOverwrite:
           enabled: true
           jdbcUrl: jdbc:postgresql://sonarqube-postgres-rw.sonarqube.svc.cluster.local:5432/sonarqube

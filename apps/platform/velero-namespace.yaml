@@ -2,3 +2,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: velero
+  labels:
+    # Velero's node-agent DaemonSet (file-system backup/restore) mounts the
+    # host's pod volumes via hostPath, which the cluster-wide `baseline` Pod
+    # Security Standard forbids — without this the DaemonSet's pods are rejected
+    # ("violates PodSecurity baseline: hostPath volumes") and node-agent stays
+    # at 0 pods, so no file-system backups run. Pin the namespace to privileged.
+    pod-security.kubernetes.io/enforce: privileged
