@@ -75,6 +75,12 @@ data:
           invalidation_flow:
             !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
+          # Authentik >=2024 defaults grant_types to [] (empty), which makes the
+          # authorize endpoint reject every flow with "Invalid grant_type for
+          # provider" / "invalid_request". Enable the code + refresh flows.
+          grant_types:
+            - authorization_code
+            - refresh_token
           client_id: !Env HARBOR_OIDC_CLIENT_ID
           client_secret: !Env HARBOR_OIDC_CLIENT_SECRET
           signing_key:
@@ -107,6 +113,9 @@ data:
           invalidation_flow:
             !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
+          grant_types:
+            - authorization_code
+            - refresh_token
           client_id: !Env GRAFANA_OIDC_CLIENT_ID
           client_secret: !Env GRAFANA_OIDC_CLIENT_SECRET
           signing_key:
@@ -138,6 +147,9 @@ data:
           invalidation_flow:
             !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           client_type: confidential
+          grant_types:
+            - authorization_code
+            - refresh_token
           client_id: !Env ARGOCD_OIDC_CLIENT_ID
           client_secret: !Env ARGOCD_OIDC_CLIENT_SECRET
           signing_key:
