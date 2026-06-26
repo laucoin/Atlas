@@ -37,14 +37,20 @@ spec:
               provider: aws
               bucket: atlas-backups
               config:
-                region: rbx
+                # Cloudflare R2: region must be "auto" (R2 ignores real regions;
+                # WEUR is only the data-location hint). s3Url is the ACCOUNT
+                # endpoint with no bucket path — the bucket is addressed via
+                # path-style. checksumAlgorithm must be "" because R2 rejects the
+                # AWS SDK's default CRC32 upload checksum (backups fail otherwise).
+                region: auto
                 s3ForcePathStyle: true
-                s3Url: https://s3.rbx.io.cloud.ovh.net
+                s3Url: https://298749e73a6230c5c6d83954957f8ba8.r2.cloudflarestorage.com
+                checksumAlgorithm: ""
           volumeSnapshotLocation:
             - name: default
               provider: aws
               config:
-                region: rbx
+                region: auto
           defaultVolumesToFsBackup: true
         deployNodeAgent: true
         # Expose Velero + node-agent metrics to Prometheus. Picked up by the
