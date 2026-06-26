@@ -1,0 +1,81 @@
+# One-shot, idempotent seeder (Argo Sync hook) that generates every random
+# secret Atlas needs and writes it into Infisical (project atlas, env prod),
+# organised into one folder per service: /authentik, /harbor, /grafana,
+# /argocd, /sonarqube. It replaces the manual "run openssl, paste into the UI"
+# steps. Each
+# key is created only if absent, so re-running never overwrites or rotates a
+# live value. It authenticates with the write-capable `seeder` Universal Auth
+# identity from the `infisical-seeder-credentials` Secret (create it once
+# out-of-band, in this namespace). Human-chosen secrets are NOT seeded:
+# /velero VELERO_S3_ACCESS_KEY and VELERO_S3_SECRET_KEY are set by hand.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: infisical-seeder
+  namespace: infisical
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      name: infisical-seeder
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seeder
+          image: alpine:3.20
+          envFrom:
+            - secretRef:
+                name: infisical-seeder-credentials
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              apk add --no-cache curl jq openssl >/dev/null
+
+              API="http://infisical-infisical-standalone-infisical.infisical.svc.cluster.local:8080"
+
+              until curl -sf "$API/api/status" >/dev/null 2>&1; do echo "waiting for Infisical..."; sleep 5; done
+
+              TOKEN=$(curl -sf -X POST "$API/api/v1/auth/universal-auth/login" \
+                -H 'Content-Type: application/json' \
+                -d "{\"clientId\":\"$clientId\",\"clientSecret\":\"$clientSecret\"}" | jq -r .accessToken)
+              [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] || { echo "login failed"; exit 1; }
+
+              rnd() { openssl rand -base64 "$1" | tr -dc 'A-Za-z0-9' | cut -c1-"$2"; }
+
+              ensure() {
+                path="$1"; name="$2"; value="$3"
+                code=$(curl -s -o /dev/null -w '%{http_code}' -G -H "Authorization: Bearer $TOKEN" \
+                  --data-urlencode "workspaceSlug=atlas" --data-urlencode "environment=prod" \
+                  --data-urlencode "secretPath=$path" "$API/api/v3/secrets/raw/$name")
+                if [ "$code" = "200" ]; then echo "  = $path/$name (kept)"; return; fi
+                curl -sf -X POST "$API/api/v3/secrets/raw/$name" -H "Authorization: Bearer $TOKEN" \
+                  -H 'Content-Type: application/json' \
+                  -d "{\"workspaceSlug\":\"atlas\",\"environment\":\"prod\",\"secretPath\":\"$path\",\"secretValue\":\"$value\"}" >/dev/null
+                echo "  + $path/$name (created)"
+              }
+
+              ensure /authentik AUTHENTIK_SECRET_KEY          "$(rnd 90 80)"
+              ensure /authentik AUTHENTIK_BOOTSTRAP_PASSWORD  "$(rnd 48 40)"
+              ensure /authentik AUTHENTIK_BOOTSTRAP_TOKEN     "$(rnd 48 40)"
+              ensure /authentik AUTHENTIK_POSTGRESQL__PASSWORD "$(rnd 48 40)"
+
+              ensure /harbor    HARBOR_ADMIN_PASSWORD         "Aa1$(rnd 36 28)"
+              ensure /harbor    HARBOR_OIDC_CLIENT_ID         "$(rnd 48 40)"
+              ensure /harbor    HARBOR_OIDC_CLIENT_SECRET     "$(rnd 96 80)"
+
+              ensure /grafana   GRAFANA_ADMIN_USER            "admin"
+              ensure /grafana   GRAFANA_ADMIN_PASSWORD        "$(rnd 48 40)"
+              ensure /grafana   GRAFANA_OIDC_CLIENT_ID        "$(rnd 48 40)"
+              ensure /grafana   GRAFANA_OIDC_CLIENT_SECRET    "$(rnd 96 80)"
+
+              ensure /argocd    ARGOCD_OIDC_CLIENT_ID         "$(rnd 48 40)"
+              ensure /argocd    ARGOCD_OIDC_CLIENT_SECRET     "$(rnd 96 80)"
+
+              ensure /sonarqube SONARQUBE_MONITORING_PASSCODE "$(rnd 48 40)"
+
+              echo "Done."

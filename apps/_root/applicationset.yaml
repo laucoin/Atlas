@@ -9,7 +9,7 @@ spec:
         # Must match var.repo_url in bootstrap/argo/terraform.tfvars.
         # REPLACE this URL with your repo before pushing.
         repoURL: https://github.com/laucoin/Atlas.git
-        revision: main
+        revision: laucoin/feat/automation
         directories:
           - path: apps/*
           - path: apps/_root
@@ -21,7 +21,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/laucoin/Atlas.git
-        targetRevision: main
+        targetRevision: laucoin/feat/automation
         path: "{{path}}"
       destination:
         server: https://kubernetes.default.svc

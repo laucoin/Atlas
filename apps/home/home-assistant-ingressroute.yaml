@@ -3,16 +3,16 @@ kind: IngressRoute
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: authentik
-  namespace: authentik
+  name: home-assistant
+  namespace: home-assistant
 spec:
   entryPoints:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`authentik.atlas.laucoin.fr`)
+      match: Host(`home-assistant.atlas.laucoin.fr`)
       services:
-        - name: authentik-server
-          port: 80
+        - name: home-assistant
+          port: 8080
   tls:
-    secretName: authentik-tls
+    secretName: home-assistant-tls

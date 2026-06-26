@@ -1,0 +1,32 @@
+# Exposes the Traefik dashboard/API at traefik.atlas.laucoin.fr, gated by
+# Authentik forward-auth. The chart's built-in dashboard IngressRoute is turned
+# off in traefik.yaml so this host-based route is the only entrypoint. The
+# api@internal TraefikService is the in-process dashboard handler; it only
+# exists once api.dashboard is enabled (the chart default).
+#
+# The authentik-forward-auth Middleware lives in the authentik namespace and is
+# reachable cross-namespace because traefik.yaml sets
+# providers.kubernetesCRD.allowCrossNamespace=true. The embedded Authentik
+# outpost serves the /outpost.goauthentik.io/auth/traefik endpoint for the
+# traefik proxy provider defined in authentik-blueprints.yaml.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: traefik-dashboard
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`traefik.atlas.laucoin.fr`)
+      middlewares:
+        - name: authentik-forward-auth
+          namespace: authentik
+      services:
+        - name: api@internal
+          kind: TraefikService
+  tls:
+    secretName: traefik-tls

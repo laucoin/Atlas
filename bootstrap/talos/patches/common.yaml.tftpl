@@ -1,6 +1,5 @@
 machine:
   network:
-    hostname: ${hostname}
     interfaces:
       - interface: ${interface}
         addresses:
@@ -15,3 +14,10 @@ machine:
   time:
     servers:
       - pool.ntp.org
+  # vm.max_map_count for SonarQube's embedded Elasticsearch (applies to this
+  # node, which is a scheduling control-plane on the single-node cluster). Set
+  # at the node level so pods don't need a privileged init-sysctl container.
+  # Re-apply Talos config after changing (`tofu apply` in bootstrap/talos).
+  sysctls:
+    vm.max_map_count: "524288"
+    fs.file-max: "131072"

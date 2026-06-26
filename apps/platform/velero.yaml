@@ -35,7 +35,7 @@ spec:
           backupStorageLocation:
             - name: default
               provider: aws
-              bucket: altas-backups
+              bucket: atlas-backups
               config:
                 region: rbx
                 s3ForcePathStyle: true
@@ -47,6 +47,15 @@ spec:
                 region: rbx
           defaultVolumesToFsBackup: true
         deployNodeAgent: true
+        # Expose Velero + node-agent metrics to Prometheus. Picked up by the
+        # cluster-wide serviceMonitorSelector ({}), and rendered by the Velero
+        # Grafana dashboard (gnetId 15469).
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+          nodeAgentPodMonitor:
+            enabled: true
         initContainers:
           - name: velero-plugin-for-aws
             image: velero/velero-plugin-for-aws:v1.10.0

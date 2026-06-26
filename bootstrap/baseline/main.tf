@@ -77,6 +77,19 @@ resource "helm_release" "cert_manager" {
     name  = "installCRDs"
     value = "true"
   }
+
+  # cert-manager exposes Prometheus metrics (prometheus.enabled defaults true),
+  # but the ServiceMonitor itself is NOT created here: baseline runs in Phase 3,
+  # long before the Prometheus Operator CRDs arrive (Phase 8), so rendering a
+  # ServiceMonitor now hard-fails ("no matches for kind ServiceMonitor"). The
+  # ServiceMonitor is instead shipped as a GitOps manifest
+  # (apps/observability/cert-manager-servicemonitor.yaml) which Argo applies
+  # once the CRDs exist. kube-prometheus-stack's serviceMonitorSelector is
+  # empty, so it gets picked up with no extra label.
+  set {
+    name  = "prometheus.servicemonitor.enabled"
+    value = "false"
+  }
 }
 
 resource "kubectl_manifest" "metallb_pool" {

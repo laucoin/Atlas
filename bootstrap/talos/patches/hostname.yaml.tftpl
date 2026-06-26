@@ -1,0 +1,8 @@
+# Talos >=1.13 ships a HostnameConfig document (default `auto: stable`). Setting
+# `machine.network.hostname` while that doc is present is rejected ("static
+# hostname is already set in v1alpha1 config"), so the static hostname is set
+# here with `auto: off` instead of under machine.network.
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: ${hostname}

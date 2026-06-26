@@ -1,0 +1,73 @@
+# Harbor's auth mode and OIDC settings live in its database, not in Helm values,
+# so this Argo Sync-hook Job applies them via the Harbor API once Harbor is up:
+# it points Harbor at the Authentik `harbor` application, sets auth mode to OIDC
+# as the primary login (enforcing SSO), maps the harbor-admins group to admins,
+# and enables auto-onboarding. PUT /configurations is idempotent, so it is safe
+# to re-run every sync. Harbor always keeps its local `admin` account (password
+# from harbor-bootstrap) as break-glass.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: harbor-oidc-config
+  namespace: harbor
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      name: harbor-oidc-config
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: configure
+          image: alpine:3.20
+          env:
+            - name: HARBOR_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-bootstrap
+                  key: HARBOR_ADMIN_PASSWORD
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-oidc
+                  key: HARBOR_OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-oidc
+                  key: HARBOR_OIDC_CLIENT_SECRET
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              apk add --no-cache curl jq >/dev/null
+
+              CORE="http://harbor-core.harbor.svc.cluster.local"
+
+              until [ "$(curl -s -o /dev/null -w '%{http_code}' "$CORE/api/v2.0/ping")" = "200" ]; do
+                echo "waiting for Harbor core..."; sleep 5
+              done
+
+              BODY=$(jq -n --arg id "$OIDC_CLIENT_ID" --arg secret "$OIDC_CLIENT_SECRET" '{
+                auth_mode: "oidc_auth",
+                primary_auth_mode: true,
+                oidc_name: "Authentik",
+                oidc_endpoint: "https://authentik.atlas.laucoin.fr/application/o/harbor/",
+                oidc_client_id: $id,
+                oidc_client_secret: $secret,
+                oidc_scope: "openid,email,profile,groups,offline_access",
+                oidc_groups_claim: "groups",
+                oidc_admin_group: "harbor-admins",
+                oidc_user_claim: "preferred_username",
+                oidc_auto_onboard: true,
+                oidc_verify_cert: true
+              }')
+
+              curl -sf -u "admin:$HARBOR_ADMIN_PASSWORD" -X PUT "$CORE/api/v2.0/configurations" \
+                -H 'Content-Type: application/json' -d "$BODY"
+
+              echo "Harbor OIDC configured (auth_mode=oidc_auth, primary)."

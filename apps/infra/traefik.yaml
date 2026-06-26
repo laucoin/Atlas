@@ -21,6 +21,14 @@ spec:
         ingressClass:
           enabled: true
           isDefaultClass: true
+        # The dashboard/API is enabled (api.dashboard defaults to true), but we
+        # disable the chart's built-in IngressRoute so our own host-based route
+        # (traefik-dashboard-ingressroute.yaml) — gated by Authentik forward-auth
+        # — is the only way in. Without this, the chart exposes /dashboard and
+        # /api on every entrypoint with no host match and no auth.
+        ingressRoute:
+          dashboard:
+            enabled: false
         providers:
           kubernetesCRD:
             enabled: true

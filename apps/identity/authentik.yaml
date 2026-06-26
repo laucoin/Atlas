@@ -1,9 +1,13 @@
-# The `authentik-bootstrap` Secret is sourced from Infisical via ESO
-# (see ./authentik-externalsecret.yaml). Populate these keys in your
-# Infisical project (atlas / prod) before this Application's pods run:
-#   AUTHENTIK_SECRET_KEY         (openssl rand -base64 60)
-#   AUTHENTIK_BOOTSTRAP_PASSWORD (openssl rand -base64 36)
-#   AUTHENTIK_BOOTSTRAP_TOKEN    (openssl rand -base64 36)
+# Authentik (the SSO IdP), installed by Argo CD from the official chart.
+# It boots entirely from Infisical-sourced secrets (no manual bootstrap): the
+# four envFrom Secrets are ESO-materialized from the /authentik, /harbor,
+# /grafana and /argocd folders (see ./authentik-externalsecret.yaml) and carry
+# Authentik's own keys plus every app's OIDC client id/secret. The bundled
+# PostgreSQL shares AUTHENTIK_POSTGRESQL__PASSWORD via existingSecret so both
+# block until the Secret exists (no DB-password race). SSO objects (scope
+# mapping, providers, applications, admin groups) are created declaratively
+# from the blueprint ConfigMap (./authentik-blueprints.yaml). North-south
+# routing is Traefik's job, so the chart's own ingress is disabled.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -24,6 +28,15 @@ spec:
           envFrom:
             - secretRef:
                 name: authentik-bootstrap
+            - secretRef:
+                name: authentik-oidc-harbor
+            - secretRef:
+                name: authentik-oidc-grafana
+            - secretRef:
+                name: authentik-oidc-argocd
+        blueprints:
+          configMaps:
+            - authentik-blueprints
         authentik:
           log_level: info
           bootstrap_email: admin@atlas.laucoin.fr
@@ -32,11 +45,6 @@ spec:
             enabled: false
         postgresql:
           enabled: true
-          # Share one password between the bundled PostgreSQL and the
-          # Authentik server (which reads AUTHENTIK_POSTGRESQL__PASSWORD via
-          # global.envFrom). Without this the chart auto-generates a throwaway
-          # password the server never receives -> "fe_sendauth: no password
-          # supplied". See getting-started.md §8.1.
           auth:
             username: authentik
             database: authentik

@@ -1,0 +1,23 @@
+# cert-manager is installed by bootstrap/baseline (Phase 3), long before the
+# Prometheus Operator CRDs exist (Phase 8), so its Helm release cannot emit a
+# ServiceMonitor itself. It is shipped here instead and applied by Argo once the
+# monitoring.coreos.com CRDs are registered. The cert-manager controller exposes
+# metrics on the `cert-manager` Service, port 9402 (tcp-prometheus-servicemonitor).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: cert-manager
+  namespace: cert-manager
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/component: controller
+  endpoints:
+    - port: tcp-prometheus-servicemonitor
+      path: /metrics
+      interval: 30s

@@ -1,0 +1,30 @@
+# CloudNativePG operator — manages PostgreSQL as Kubernetes-native `Cluster`
+# CRDs. Installed cluster-wide so any app can declare its own database;
+# currently the backing store for SonarQube (../platform/sonarqube-postgres.yaml,
+# which the SonarSource chart no longer bundles). CRDs ship with the chart, so
+# server-side apply is used (they exceed Argo's client-side annotation limit).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudnative-pg
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://cloudnative-pg.github.io/charts
+    chart: cloudnative-pg
+    targetRevision: 0.28.3
+    helm:
+      releaseName: cloudnative-pg
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cnpg-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,22 @@
+# PostgreSQL for SonarQube, managed by the CloudNativePG operator
+# (../infra/cloudnative-pg.yaml). CNPG generates a `sonarqube-postgres-app`
+# Secret (basic-auth: username/password) for the `sonarqube` role + database,
+# which SonarQube consumes via jdbcOverwrite in ./sonarqube.yaml. The SkipDryRun
+# option lets Argo apply this before the operator's CRD is registered on a fresh
+# cluster; selfHeal retries until the CRD exists.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: sonarqube-postgres
+  namespace: sonarqube
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  bootstrap:
+    initdb:
+      database: sonarqube
+      owner: sonarqube

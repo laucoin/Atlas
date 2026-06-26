@@ -22,8 +22,8 @@ variable "install_disk" {
 
 variable "talos_version" {
   type        = string
-  description = "Talos image version (vX.Y.Z)."
-  default     = "v1.8.2"
+  description = "Talos image version (vX.Y.Z). Must be >=1.13 — the config uses the HostnameConfig document (patches/hostname.yaml.tftpl)."
+  default     = "v1.13.4"
 }
 
 variable "kubernetes_version" {
@@ -40,4 +40,23 @@ variable "network" {
     nameservers = list(string)
   })
   description = "Static network configuration for the node."
+}
+
+variable "worker_nodes" {
+  type = list(object({
+    hostname     = string
+    node_ip      = string
+    install_disk = string
+    interface    = string
+    cidr         = string
+    gateway      = string
+    nameservers  = optional(list(string))
+  }))
+  description = <<-EOT
+    Optional extra worker nodes to join to the cluster. Leave empty ([]) for
+    the default single-node setup. Each entry reuses the cluster's existing
+    machine secrets, so adding a worker never re-keys the cluster. nameservers
+    defaults to the control-plane node's if omitted.
+  EOT
+  default     = []
 }

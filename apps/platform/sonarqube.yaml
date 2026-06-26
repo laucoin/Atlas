@@ -1,0 +1,67 @@
+# SonarQube Community Build — static code analysis. Deployed with native login
+# (no Authentik SSO). PostgreSQL is provided by the CNPG Cluster in
+# ./sonarqube-postgres.yaml; SonarQube reads the CNPG-generated
+# `sonarqube-postgres-app` Secret via jdbcOverwrite. Elasticsearch needs
+# vm.max_map_count=524288, set at the node level via Talos
+# (bootstrap/talos/patches/common.yaml.tftpl), so the privileged initSysctl
+# container is disabled here and the namespace stays under baseline PSS.
+# Metrics: the native /api/monitoring endpoint (guarded by the monitoring
+# passcode from Infisical, see ./sonarqube-externalsecret.yaml) is scraped by
+# the chart's PodMonitor and rendered by Grafana (gnetId 17641). TLS/routing:
+# ./sonarqube-cert.yaml + ./sonarqube-ingressroute.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sonarqube
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://SonarSource.github.io/helm-chart-sonarqube
+    chart: sonarqube
+    targetRevision: 2026.3.1
+    helm:
+      releaseName: sonarqube
+      valuesObject:
+        community:
+          enabled: true
+        service:
+          type: ClusterIP
+          externalPort: 9000
+        ingress:
+          enabled: false
+        persistence:
+          enabled: true
+          storageClass: local-path
+          size: 10Gi
+        # vm.max_map_count is set on the Talos node, so skip the privileged
+        # init container.
+        initSysctl:
+          enabled: false
+        jdbcOverwrite:
+          enabled: true
+          jdbcUrl: jdbc:postgresql://sonarqube-postgres-rw.sonarqube.svc.cluster.local:5432/sonarqube
+          jdbcUsername: sonarqube
+          jdbcSecretName: sonarqube-postgres-app
+          jdbcSecretPasswordKey: password
+        # Native SonarQube Prometheus metrics, scraped via the chart's
+        # PodMonitor (Prometheus podMonitorSelector is empty, so it's picked
+        # up). The endpoint is guarded by the monitoring passcode.
+        monitoringPasscodeSecretName: sonarqube-monitoring
+        monitoringPasscodeSecretKey: passcode
+        prometheusMonitoring:
+          podMonitor:
+            enabled: true
+            interval: 30s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sonarqube
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

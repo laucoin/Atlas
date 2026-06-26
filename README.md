@@ -23,7 +23,7 @@ You run `tofu apply` three times to stand up the node, then Argo CD takes over. 
 
 | Concern         | Tooling                                           |
 | --------------- | ------------------------------------------------- |
-| OS & Kubernetes | Talos Linux + k3s                                 |
+| OS & Kubernetes | Talos Linux (vanilla Kubernetes)                  |
 | GitOps engine   | Argo CD (`app-of-apps` via `ApplicationSet`)      |
 | Ingress & TLS   | Traefik + cert-manager (Let's Encrypt HTTP-01)    |
 | Identity / SSO  | Authentik (forward-auth front door)               |

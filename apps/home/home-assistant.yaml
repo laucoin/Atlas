@@ -1,0 +1,67 @@
+# Home Assistant — self-hosted home automation hub. Deployed with native HA
+# login (no Authentik SSO: HA has no usable OIDC and forward-auth breaks its
+# mobile/companion apps and API). TLS + routing are handled by cert-manager +
+# Traefik (./home-assistant-cert.yaml, ./home-assistant-ingressroute.yaml).
+# Prometheus metrics are exposed at /api/prometheus and scraped by
+# ./home-assistant-servicemonitor.yaml (Grafana dashboard: gnetId 15832).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: home-assistant
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: http://pajikos.github.io/home-assistant-helm-chart
+    chart: home-assistant
+    targetRevision: 0.5.3
+    helm:
+      releaseName: home-assistant
+      valuesObject:
+        persistence:
+          enabled: true
+          storageClass: local-path
+          size: 5Gi
+        # HA sits behind the in-cluster Traefik proxy, so it must trust the
+        # forwarded client IP, otherwise it rejects every proxied request with
+        # "400 Bad Request". templateConfig is rendered through Helm `tpl`, so
+        # the range over trusted_proxies below is expanded by the chart. The
+        # `prometheus:` integration publishes metrics at /api/prometheus.
+        configuration:
+          enabled: true
+          trusted_proxies:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+          templateConfig: |-
+            # Loads default set of integrations. Do not remove.
+            default_config:
+
+            # Load frontend themes from the themes folder
+            frontend:
+              themes: !include_dir_merge_named themes
+
+            automation: !include automations.yaml
+            script: !include scripts.yaml
+            scene: !include scenes.yaml
+
+            http:
+              use_x_forwarded_for: true
+              trusted_proxies:
+            {{- range .Values.configuration.trusted_proxies }}
+                - {{ . }}
+            {{- end }}
+
+            # Prometheus metrics at /api/prometheus (Bearer-token auth).
+            prometheus:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: home-assistant
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

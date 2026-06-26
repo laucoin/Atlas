@@ -16,5 +16,20 @@ network = {
 }
 
 # Optional overrides
-# talos_version      = "v1.8.2"
+# talos_version      = "v1.13.4"   # must be >=1.13 (config uses HostnameConfig)
 # kubernetes_version = "1.31.2"
+
+# Optional: extra worker nodes to join (default: single-node, none).
+# Boot each new machine into Talos maintenance mode first, then add it here
+# and re-run `tofu apply`. See getting-started.md "Add a node to the cluster".
+# worker_nodes = [
+#   {
+#     hostname     = "atlas-w1"
+#     node_ip      = "10.0.0.11"
+#     install_disk = "/dev/nvme0n1"
+#     interface    = "eno1"
+#     cidr         = "10.0.0.11/24"
+#     gateway      = "10.0.0.1"
+#     # nameservers = ["1.1.1.1", "9.9.9.9"]   # defaults to the control-plane's
+#   },
+# ]
