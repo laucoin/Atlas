@@ -1,3 +1,6 @@
 ---
 - name: Configure SSH
   ansible.builtin.import_tasks: ssh.yml
+
+- name: Configure the firewall
+  ansible.builtin.import_tasks: firewall.yml
