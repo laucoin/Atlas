@@ -1,0 +1,45 @@
+---
+- name: Install LVM tools
+  ansible.builtin.apt:
+    name: lvm2
+    state: present
+
+- name: Size each logical volume (create if missing, grow if undersized, never shrink)
+  community.general.lvol:
+    vg: "{{ storage_volume_group }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size_gb }}g"
+    shrink: false
+    state: present
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Ensure each mount point directory exists
+  ansible.builtin.file:
+    path: "{{ item.mount }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create or grow each filesystem
+  community.general.filesystem:
+    fstype: ext4
+    dev: "/dev/{{ storage_volume_group }}/{{ item.lv }}"
+    resizefs: true
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Mount and persist each volume
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "/dev/{{ storage_volume_group }}/{{ item.lv }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
