@@ -1,0 +1,12 @@
+## Managed by Ansible — roles/hardening. Do not edit by hand.
+Port {{ hardening_ssh_port }}
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+AllowUsers {{ hardening_ssh_permitted_user }}
+LoginGraceTime {{ hardening_ssh_login_grace_time }}
+MaxAuthTries {{ hardening_ssh_max_auth_tries }}
+KexAlgorithms {{ hardening_ssh_kex_algorithms | join(',') }}
+Ciphers {{ hardening_ssh_ciphers | join(',') }}
+MACs {{ hardening_ssh_macs | join(',') }}

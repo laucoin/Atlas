@@ -1,0 +1,20 @@
+---
+- name: Render the SSH hardening drop-in
+  ansible.builtin.template:
+    src: sshd_config_atlas.j2
+    dest: /etc/ssh/sshd_config.d/10-atlas-hardening.conf
+    owner: root
+    group: root
+    mode: "0600"
+  register: hardening_sshd_config
+
+- name: Validate the full sshd configuration
+  ansible.builtin.command: sshd -t
+  changed_when: false
+  when: hardening_sshd_config.changed
+
+- name: Restart sshd if the configuration changed
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  when: hardening_sshd_config.changed
