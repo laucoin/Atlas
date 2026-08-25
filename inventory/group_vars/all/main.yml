@@ -1,0 +1,7 @@
+---
+atlas_timezone: Europe/Paris
+atlas_locale: en_US.UTF-8
+
+atlas_admin_user: atlas
+# The maintainer's workstation SSH public key. Replace before the first converge.
+atlas_admin_ssh_public_key: "CHANGE_ME"

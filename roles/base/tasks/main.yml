@@ -1,0 +1,46 @@
+---
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Generate the declared locale
+  community.general.locale_gen:
+    name: "{{ base_locale }}"
+    state: present
+
+- name: Set the system timezone
+  community.general.timezone:
+    name: "{{ base_timezone }}"
+
+- name: Create the administrative group
+  ansible.builtin.group:
+    name: "{{ base_admin_user }}"
+    state: present
+
+- name: Create the administrative account
+  ansible.builtin.user:
+    name: "{{ base_admin_user }}"
+    group: "{{ base_admin_user }}"
+    groups: sudo
+    append: true
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Deploy the administrator's SSH public key
+  ansible.posix.authorized_key:
+    user: "{{ base_admin_user }}"
+    key: "{{ base_admin_ssh_public_key }}"
+    state: present
+
+- name: Grant password-protected sudo elevation
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ base_admin_user }}"
+    content: "{{ base_admin_user }} ALL=(ALL:ALL) ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"

@@ -1,0 +1,13 @@
+---
+base_packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - vim
+  - htop
+  - rsync
+
+base_timezone: "{{ atlas_timezone }}"
+base_locale: "{{ atlas_locale }}"
+base_admin_user: "{{ atlas_admin_user }}"
+base_admin_ssh_public_key: "{{ atlas_admin_ssh_public_key }}"

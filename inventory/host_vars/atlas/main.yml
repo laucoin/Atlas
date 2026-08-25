@@ -1,0 +1,8 @@
+---
+# The machine's real address. Replace before the first converge.
+ansible_host: CHANGE_ME
+
+# Bootstrap only: a fresh Debian install has no admin account yet, so the
+# first converge connects as root. The hardening role disables root SSH
+# once the admin account and its key are in place.
+ansible_user: root
