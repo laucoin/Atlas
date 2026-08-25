@@ -7,3 +7,6 @@
 
 - name: Configure kernel hardening and mandatory access control
   ansible.builtin.import_tasks: kernel.yml
+
+- name: Configure intrusion response
+  ansible.builtin.import_tasks: fail2ban.yml
