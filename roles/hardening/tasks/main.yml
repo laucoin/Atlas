@@ -10,3 +10,6 @@
 
 - name: Configure intrusion response
   ansible.builtin.import_tasks: fail2ban.yml
+
+- name: Configure unattended security updates
+  ansible.builtin.import_tasks: unattended-upgrades.yml
