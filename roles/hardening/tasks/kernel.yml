@@ -1,0 +1,24 @@
+---
+- name: Apply declared kernel hardening settings
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/90-atlas-hardening.conf
+    reload: true
+    state: present
+  loop: "{{ hardening_sysctl_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Install AppArmor
+  ansible.builtin.apt:
+    name:
+      - apparmor
+      - apparmor-utils
+    state: present
+
+- name: Enable AppArmor
+  ansible.builtin.systemd:
+    name: apparmor
+    enabled: true
+    state: started
