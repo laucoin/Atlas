@@ -1,0 +1,24 @@
+---
+storage_volume_group: vg_atlas
+
+storage_volumes:
+  - name: logs
+    lv: lv_logs
+    mount: /var/log
+    size_gb: 20
+  - name: container_runtime
+    lv: lv_docker
+    mount: /var/lib/docker
+    size_gb: 150
+  - name: application_data
+    lv: lv_appdata
+    mount: /srv/atlas
+    size_gb: 200
+  - name: registry
+    lv: lv_registry
+    mount: /srv/registry
+    size_gb: 500
+  - name: object_storage
+    lv: lv_garage
+    mount: /srv/garage
+    size_gb: 1000
