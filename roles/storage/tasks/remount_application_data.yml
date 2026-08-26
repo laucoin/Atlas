@@ -1,0 +1,33 @@
+---
+- name: Check whether /srv already holds application data
+  ansible.builtin.command: findmnt --noheadings --output SOURCE /srv
+  register: storage_srv_mount
+  changed_when: false
+  failed_when: false
+
+- name: Move application data from /var/data to /srv
+  when: "'lv_data' not in storage_srv_mount.stdout"
+  block:
+    - name: Remove the old /var/data mount and fstab entry
+      ansible.posix.mount:
+        path: /var/data
+        state: absent
+
+    - name: Remove the /var/data mount point
+      ansible.builtin.file:
+        path: /var/data
+        state: absent
+
+    - name: Ensure /srv exists
+      ansible.builtin.file:
+        path: /srv
+        state: directory
+        mode: "0755"
+
+    - name: Mount application data at /srv and persist it
+      ansible.posix.mount:
+        path: /srv
+        src: "/dev/{{ storage_volume_group }}/lv_data"
+        fstype: ext4
+        opts: defaults
+        state: mounted
