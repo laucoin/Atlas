@@ -52,7 +52,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | ----- | ----- | ------- |
 | `inventory/hosts.yml` | The `atlas` host declaration | — |
 | `inventory/host_vars/atlas/main.yml` | `ansible_host` (the machine's real address) and `ansible_user` (bootstrap connects as `root`) | `CHANGE_ME` / `root` |
-| `inventory/group_vars/all/main.yml` | `atlas_timezone`, `atlas_locale`, `atlas_admin_user`, `atlas_admin_ssh_public_key` | `Europe/Paris`, `en_US.UTF-8`, `atlas`, `CHANGE_ME` |
+| `inventory/group_vars/all/main.yml` | `atlas_timezone`, `atlas_locale`, `atlas_admin_user`, `atlas_admin_ssh_public_key`, `atlas_ssh_port` (documentation only — see below) | `Europe/Paris`, `en_US.UTF-8`, `atlas`, `CHANGE_ME`, `222` |
 | `inventory/group_vars/all/images.yml` | Every image tag and digest | not yet created |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
 | Encrypted values | Secrets, encrypted per value with an age key | not yet needed by any implemented role |
@@ -64,6 +64,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 3. Set `ansible_host` in `inventory/host_vars/atlas/main.yml` to the machine's real address.
 4. Set `atlas_admin_ssh_public_key` in `inventory/group_vars/all/main.yml` to the maintainer's workstation public key.
 5. The `age` key that will decrypt future secrets stays on the workstation only; it is never copied to Atlas, and nothing is decrypted at rest on the host.
+6. From the internet, SSH reaches Atlas on the gateway's external port (`atlas_ssh_port`, `222`), which the gateway translates to `22` before it reaches the host — sshd itself is never configured with `222`. `ssh -p 222 atlas@<domain>` from off the local network; `ssh -p 22 atlas@<host>` (or just the default port) from the workstation's own LAN, gateway rules depending.
 
 ### Build, run, verify
 
