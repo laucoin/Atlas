@@ -14,7 +14,7 @@ Atlas is a **single Debian node, described entirely in code**: one Ansible repos
 | ------- | --------------------------- |
 | Provisioning | Ansible, run by hand from the maintainer's workstation |
 | Runtime | Docker, rootless, one daemon under one service user — including the reverse proxy |
-| Secrets | Per-value encryption with an `age` key, never decrypted at rest on the host |
+| Secrets | SOPS + `age`, per-value encryption, never decrypted at rest on the host |
 
 ### Layout
 
@@ -42,7 +42,8 @@ atlas/
 | ----------- | ----- |
 | A fresh **Debian stable** install | SSH reachable; everything after that is Ansible's |
 | **Ansible** on the workstation | Runs the converge; nothing is installed on the host beyond what a role declares |
-| **age** on the workstation | Decrypts secrets during a converge; the key never reaches the host |
+| **age** on the workstation | Generates and holds the key that decrypts secrets during a converge; the key never reaches the host |
+| **sops** on the workstation | Encrypts/edits per-value secrets in `inventory/**/*.sops.yaml`; decryption during a converge goes through the `community.sops` collection instead |
 | **Docker** on the host | Installed and configured by the `docker` role, rootless under its own service user |
 | **gh** on the workstation | Used to open the stacked pull requests described in AGENTS.md |
 
@@ -60,7 +61,8 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `roles/docker/defaults/main.yml` | `docker_service_user` and its subordinate UID/GID range | `atlas-docker`; `100000`-`165535` |
 | `roles/shell/defaults/main.yml` | `shell_targets` (admin + root) and the pinned Starship version | see the role |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
-| Encrypted values | Secrets, encrypted per value with an age key | not yet needed by any implemented role |
+| `inventory/**/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — first needed by `traefik`'s DNS-01 credentials |
+| `.sops.yaml` | Which age key new secrets get encrypted for | `CHANGE_ME_AGE_PUBLIC_KEY` — replace before creating the first secret |
 
 ### Local setup
 
@@ -69,6 +71,8 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 3. Set `ansible_host` in `inventory/host_vars/atlas/main.yml` to the machine's real address.
 4. Set `atlas_admin_ssh_public_key` in `inventory/group_vars/all/main.yml` to the maintainer's workstation public key.
 5. The `age` key that will decrypt future secrets stays on the workstation only; it is never copied to Atlas, and nothing is decrypted at rest on the host.
+6. Generate the age key once, if it doesn't already exist: `age-keygen -o ~/.config/sops/age/keys.txt` (SOPS' own default lookup path — no environment variable needed). Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHANGE_ME_AGE_PUBLIC_KEY`.
+7. Create a secret: `sops inventory/group_vars/all/traefik.sops.yaml` opens an editor; write plain YAML (e.g. `ovh_application_key: ...`), save, and SOPS encrypts it on write using the recipient declared in `.sops.yaml`. It's then a normal Ansible variable — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
 
 ### Build, run, verify
 

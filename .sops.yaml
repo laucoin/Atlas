@@ -1,0 +1,6 @@
+# Encrypts every inventory/**/*.sops.yaml file for the maintainer's age
+# key. Replace with the real public key before creating the first secret —
+# `age-keygen` prints it as `# public key: age1...`.
+creation_rules:
+  - path_regex: inventory/.*\.sops\.ya?ml$
+    age: CHANGE_ME_AGE_PUBLIC_KEY
