@@ -1,20 +1,33 @@
 ---
-- name: Render the SSH hardening drop-in
-  ansible.builtin.template:
-    src: sshd_config_atlas.j2
-    dest: /etc/ssh/sshd_config.d/10-atlas-hardening.conf
-    owner: root
-    group: root
-    mode: "0600"
-  register: hardening_sshd_config
+- name: Set the declared directives in Debian's shipped sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?{{ item.key }}\\b.*"
+    line: "{{ item.key }} {{ item.value }}"
+    state: present
+  loop:
+    - { key: "Port", value: "{{ hardening_ssh_port }}" }
+    - { key: "PermitRootLogin", value: "no" }
+    - { key: "PasswordAuthentication", value: "no" }
+    - { key: "KbdInteractiveAuthentication", value: "no" }
+    - { key: "PubkeyAuthentication", value: "yes" }
+    - { key: "AllowUsers", value: "{{ hardening_ssh_permitted_user }}" }
+    - { key: "LoginGraceTime", value: "{{ hardening_ssh_login_grace_time }}" }
+    - { key: "MaxAuthTries", value: "{{ hardening_ssh_max_auth_tries }}" }
+    - { key: "KexAlgorithms", value: "{{ hardening_ssh_kex_algorithms | join(',') }}" }
+    - { key: "Ciphers", value: "{{ hardening_ssh_ciphers | join(',') }}" }
+    - { key: "MACs", value: "{{ hardening_ssh_macs | join(',') }}" }
+  loop_control:
+    label: "{{ item.key }}"
+  register: hardening_sshd_lines
 
-- name: Validate the full sshd configuration
+- name: Validate the sshd configuration
   ansible.builtin.command: sshd -t
   changed_when: false
-  when: hardening_sshd_config.changed
+  when: hardening_sshd_lines.changed
 
-- name: Restart sshd if the configuration changed
+- name: Restart sshd if any directive changed
   ansible.builtin.service:
     name: ssh
     state: restarted
-  when: hardening_sshd_config.changed
+  when: hardening_sshd_lines.changed
