@@ -7,3 +7,6 @@
 
 - name: Deploy the Starship prompt configuration
   ansible.builtin.import_tasks: starship.yml
+
+- name: Deploy the Vim configuration and theme
+  ansible.builtin.import_tasks: vim.yml
