@@ -13,3 +13,6 @@
 
 - name: Deploy the port-inspection helpers
   ansible.builtin.import_tasks: port_helpers.yml
+
+- name: Deploy the volume-usage helper
+  ansible.builtin.import_tasks: volume_usage.yml

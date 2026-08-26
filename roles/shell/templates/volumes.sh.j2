@@ -1,0 +1,6 @@
+#!/bin/sh
+## Managed by Ansible — roles/shell. Do not edit by hand.
+## Mount points come from storage_volumes (roles/storage/defaults) plus the
+## system root, so this can never drift from what storage actually declares.
+df -h / {% for v in storage_volumes %}{{ v.mount }}{{ " " if not loop.last else "" }}{% endfor %}
+

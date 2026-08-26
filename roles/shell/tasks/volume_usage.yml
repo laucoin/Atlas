@@ -1,0 +1,8 @@
+---
+- name: Deploy the per-volume usage helper
+  ansible.builtin.template:
+    src: volumes.sh.j2
+    dest: /opt/atlas/scripts/volumes.sh
+    owner: root
+    group: root
+    mode: "0755"
