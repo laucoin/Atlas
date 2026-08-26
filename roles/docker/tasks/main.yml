@@ -1,3 +1,6 @@
 ---
 - name: Set up the rootless Docker runtime
   ansible.builtin.import_tasks: runtime.yml
+
+- name: Activate the rootless Docker service
+  ansible.builtin.import_tasks: rootless.yml
