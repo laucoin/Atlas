@@ -22,3 +22,16 @@
   loop:
     - logger_config.py
     - port.py
+
+- name: Install the port-helper CLI dependency
+  ansible.builtin.apt:
+    name: python3-click
+    state: present
+
+- name: Deploy the port-helper CLI entrypoint
+  ansible.builtin.copy:
+    src: atlas_shell_scripts/sys_ext.py
+    dest: /opt/atlas/scripts/sys_ext.py
+    owner: root
+    group: root
+    mode: "0644"
