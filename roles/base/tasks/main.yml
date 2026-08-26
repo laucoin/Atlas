@@ -44,3 +44,14 @@
     group: root
     mode: "0440"
     validate: "visudo -cf %s"
+
+- name: Purge packages Atlas has no use for
+  ansible.builtin.apt:
+    name: "{{ base_purge_packages }}"
+    state: absent
+    purge: true
+    autoremove: true
+
+- name: Clean the apt package cache
+  ansible.builtin.apt:
+    autoclean: true
