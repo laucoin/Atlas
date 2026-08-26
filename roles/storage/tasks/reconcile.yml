@@ -15,15 +15,6 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Ensure each mount point directory exists
-  ansible.builtin.file:
-    path: "{{ item.mount }}"
-    state: directory
-    mode: "0755"
-  loop: "{{ storage_volumes }}"
-  loop_control:
-    label: "{{ item.name }}"
-
 - name: Create or grow each filesystem
   community.general.filesystem:
     fstype: ext4
@@ -33,13 +24,10 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Mount and persist each volume
-  ansible.posix.mount:
-    path: "{{ item.mount }}"
-    src: "/dev/{{ storage_volume_group }}/{{ item.lv }}"
-    fstype: ext4
-    opts: defaults
-    state: mounted
-  loop: "{{ storage_volumes }}"
-  loop_control:
-    label: "{{ item.name }}"
+# System, var and container runtime already have working fstab entries from
+# the manual install — sizing above is all they need. Mounting them again
+# here would risk rewriting an already-correct fstab line for no benefit
+# (e.g. a device-naming mismatch reads as "different", forcing a rewrite
+# every run). Logs and application data get their mount+fstab handling in
+# their own dedicated steps, because both are transitions with real data
+# to preserve, not a first-time "mount if declared" case.
