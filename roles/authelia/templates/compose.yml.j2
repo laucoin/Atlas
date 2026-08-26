@@ -1,0 +1,47 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+  internal:
+    driver: bridge
+
+services:
+  postgres:
+    image: {{ authelia_postgres_image }}
+    container_name: authelia-postgres
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_postgres_uid }}:{{ authelia_postgres_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    environment:
+      POSTGRES_DB: authelia
+      POSTGRES_USER: authelia
+      POSTGRES_PASSWORD: "{{ authelia_postgres_password }}"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: {{ authelia_redis_image }}
+    container_name: authelia-redis
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_redis_uid }}:{{ authelia_redis_uid }}"
+    tmpfs:
+      - /tmp
+    command: ["--requirepass", "{{ authelia_redis_password }}"]
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - internal

@@ -1,0 +1,21 @@
+---
+- name: Ensure the authelia stack directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ authelia_service_user }}"
+    group: "{{ authelia_service_user }}"
+    mode: "0750"
+  loop:
+    - "{{ authelia_stack_dir }}"
+    - "{{ authelia_stack_dir }}/data/postgres"
+    - "{{ authelia_stack_dir }}/data/redis"
+
+- name: Render the authelia Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ authelia_stack_dir }}/compose.yml"
+    owner: "{{ authelia_service_user }}"
+    group: "{{ authelia_service_user }}"
+    mode: "0640"
+  register: authelia_compose
