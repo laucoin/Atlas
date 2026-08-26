@@ -1,0 +1,24 @@
+---
+- name: Install the port-helper library dependency
+  ansible.builtin.apt:
+    name: python3-colorlog
+    state: present
+
+- name: Ensure the shared scripts directory exists
+  ansible.builtin.file:
+    path: /opt/atlas/scripts
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy the port-helper library modules
+  ansible.builtin.copy:
+    src: "atlas_shell_scripts/{{ item }}"
+    dest: "/opt/atlas/scripts/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - logger_config.py
+    - port.py

@@ -10,3 +10,6 @@
 
 - name: Deploy the Vim configuration and theme
   ansible.builtin.import_tasks: vim.yml
+
+- name: Deploy the port-inspection helpers
+  ansible.builtin.import_tasks: port_helpers.yml
