@@ -1,0 +1,22 @@
+---
+- name: Ensure each account's config directory exists
+  ansible.builtin.file:
+    path: "{{ item.home }}/.config"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: "0755"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+- name: Deploy starship.toml for each account
+  ansible.builtin.copy:
+    src: starship.toml
+    dest: "{{ item.home }}/.config/starship.toml"
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: "0644"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
