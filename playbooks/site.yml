@@ -11,3 +11,5 @@
       tags: [storage]
     - role: docker
       tags: [docker]
+    - role: shell
+      tags: [shell]
