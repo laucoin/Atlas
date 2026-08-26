@@ -1,0 +1,65 @@
+---
+- name: Install rootless Docker prerequisites
+  ansible.builtin.apt:
+    name:
+      - uidmap
+      - dbus-user-session
+      - slirp4netns
+      - fuse-overlayfs
+      - iptables
+      - python3-debian
+    state: present
+
+- name: Ensure the apt keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Fetch Docker's apt signing key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Add Docker's apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: https://download.docker.com/linux/debian
+    suites: "{{ ansible_distribution_release }}"
+    components: [stable]
+    architectures: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+    signed_by: /etc/apt/keyrings/docker.asc
+    state: present
+
+- name: Install Docker
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-ce-rootless-extras
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Create the Docker service user
+  ansible.builtin.user:
+    name: "{{ docker_service_user }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+  register: docker_service_account
+
+- name: Declare the service user's subordinate UID range
+  ansible.builtin.lineinfile:
+    path: /etc/subuid
+    regexp: "^{{ docker_service_user }}:"
+    line: "{{ docker_service_user }}:{{ docker_subuid_start }}:{{ docker_subuid_count }}"
+
+- name: Declare the service user's subordinate GID range
+  ansible.builtin.lineinfile:
+    path: /etc/subgid
+    regexp: "^{{ docker_service_user }}:"
+    line: "{{ docker_service_user }}:{{ docker_subuid_start }}:{{ docker_subuid_count }}"
