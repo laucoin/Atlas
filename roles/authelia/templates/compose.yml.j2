@@ -1,0 +1,76 @@
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge
+
+services:
+  postgres:
+    image: {{ authelia_postgres_image }}
+    container_name: authelia-postgres
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_postgres_uid }}:{{ authelia_postgres_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    environment:
+      POSTGRES_DB: authelia
+      POSTGRES_USER: authelia
+      POSTGRES_PASSWORD: "{{ authelia_postgres_password }}"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: {{ authelia_redis_image }}
+    container_name: authelia-redis
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_redis_uid }}:{{ authelia_redis_uid }}"
+    tmpfs:
+      - /tmp
+    command: ["--requirepass", "{{ authelia_redis_password }}"]
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - internal
+
+  authelia:
+    image: {{ authelia_image }}
+    container_name: authelia
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_uid }}:{{ authelia_uid }}"
+    tmpfs:
+      - /tmp
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "127.0.0.1:{{ authelia_port }}:9091"
+    healthcheck:
+      test: ["CMD", "authelia", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./config/configuration.yml:/config/configuration.yml:ro
+      - ./config/users_database.yml:/config/users_database.yml:ro
+    networks:
+      - proxy
+      - internal
