@@ -21,3 +21,11 @@
     label: "{{ item.name }}"
   vars:
     mount_info: "{{ (ansible_mounts | selectattr('mount', 'equalto', item.mount) | list | first) | default({}) }}"
+
+- name: Assert swap is active at its declared size
+  ansible.builtin.assert:
+    that: (ansible_swaptotal_mb | int) >= (storage_swap_size_gb * 1000)
+    fail_msg: >-
+      Swap is smaller than the declared {{ storage_swap_size_gb }} GB.
+      Run playbooks/storage.yml to reconcile.
+    success_msg: "Swap matches its declared size."
