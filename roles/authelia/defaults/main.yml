@@ -6,3 +6,7 @@ authelia_redis_uid: 2003
 
 authelia_postgres_image: "postgres:17-alpine"
 authelia_redis_image: "redis:7-alpine"
+
+authelia_uid: 2001
+authelia_image: "authelia/authelia:4.39"
+authelia_port: 9091

@@ -36,6 +36,19 @@
     group: "{{ authelia_redis_host_uid }}"
     mode: "0750"
 
+# Just a host-side staging directory — docker bind-mounts the individual
+# files inside it, never the directory itself, so the container never
+# needs to traverse it. Each file rendered into it gets the container's
+# mapped UID at the point it's rendered (roles/authelia/tasks/
+# configuration.yml), not here.
+- name: Ensure the config directory exists
+  ansible.builtin.file:
+    path: "{{ authelia_stack_dir }}/config"
+    state: directory
+    owner: "{{ authelia_service_user }}"
+    group: "{{ authelia_service_user }}"
+    mode: "0750"
+
 - name: Render the authelia Compose file
   ansible.builtin.template:
     src: compose.yml.j2
