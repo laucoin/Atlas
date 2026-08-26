@@ -1,0 +1,18 @@
+---
+- name: Render the authelia configuration
+  ansible.builtin.template:
+    src: configuration.yml.j2
+    dest: "{{ authelia_stack_dir }}/config/configuration.yml"
+    owner: "{{ authelia_service_user }}"
+    group: "{{ authelia_service_user }}"
+    mode: "0640"
+  register: authelia_configuration
+
+- name: Render the users database
+  ansible.builtin.template:
+    src: users_database.yml.j2
+    dest: "{{ authelia_stack_dir }}/config/users_database.yml"
+    owner: "{{ authelia_service_user }}"
+    group: "{{ authelia_service_user }}"
+    mode: "0600"
+  register: authelia_users_database
