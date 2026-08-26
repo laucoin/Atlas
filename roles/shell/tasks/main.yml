@@ -1,3 +1,6 @@
 ---
 - name: Install zsh, Starship and plugins
   ansible.builtin.import_tasks: install.yml
+
+- name: Deploy the zsh configuration
+  ansible.builtin.import_tasks: configure.yml
