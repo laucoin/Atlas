@@ -1,0 +1,30 @@
+---
+- name: Ensure the traefik stack directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ traefik_service_user }}"
+    group: "{{ traefik_service_user }}"
+    mode: "0750"
+  loop:
+    - "{{ traefik_stack_dir }}"
+    - "{{ traefik_stack_dir }}/dynamic"
+
+- name: Ensure acme.json exists with the permissions ACME requires
+  ansible.builtin.file:
+    path: "{{ traefik_stack_dir }}/acme.json"
+    state: touch
+    owner: "{{ traefik_service_user }}"
+    group: "{{ traefik_service_user }}"
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+
+- name: Render the traefik Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ traefik_stack_dir }}/compose.yml"
+    owner: "{{ traefik_service_user }}"
+    group: "{{ traefik_service_user }}"
+    mode: "0640"
+  register: traefik_compose

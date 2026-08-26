@@ -1,0 +1,52 @@
+networks:
+  proxy:
+    driver: bridge
+
+services:
+  traefik:
+    image: {{ traefik_image }}
+    container_name: traefik
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 100
+    user: "{{ traefik_uid }}:{{ traefik_uid }}"
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:{{ traefik_http_port }}:80"
+      - "127.0.0.1:{{ traefik_https_port }}:443"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    environment:
+      OVH_ENDPOINT: ovh-eu
+      OVH_APPLICATION_KEY: "{{ ovh_application_key }}"
+      OVH_APPLICATION_SECRET: "{{ ovh_application_secret }}"
+      OVH_CONSUMER_KEY: "{{ ovh_consumer_key }}"
+    volumes:
+      - ./acme.json:/acme.json
+      - ./dynamic:/dynamic:ro
+    command:
+      - "--ping=true"
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.atlas.acme.dnschallenge=true"
+      - "--certificatesresolvers.atlas.acme.dnschallenge.provider=ovh"
+      - "--certificatesresolvers.atlas.acme.email={{ atlas_acme_email }}"
+      - "--certificatesresolvers.atlas.acme.storage=/acme.json"
+      - "--entrypoints.websecure.http.tls.certresolver=atlas"
+      - "--entrypoints.websecure.http.tls.domains[0].main=atlas.{{ atlas_domain }}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.atlas.{{ atlas_domain }}"
+    networks:
+      - proxy
