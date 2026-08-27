@@ -34,3 +34,11 @@ theme_error_pages_uid: 2010
 theme_error_pages_image: "nginx:alpine"
 theme_error_pages_port: 8080
 theme_error_pages_container: atlas-error-pages
+
+theme_dashboard_stack_dir: /srv/theme/dashboard
+
+# Declares every service that appears on the dashboard, per unified-theme
+# rule 5: "rendered from the same declarations that define the services."
+# Empty for now — no service role has landed yet to declare one (Phase 3).
+# Each future entry: {name, subdomain, description}.
+atlas_services: []
