@@ -28,3 +28,7 @@ atlas_palette:
     success: "#30D158"
     warning: "#FF9F0A"
     error: "#FF453A"
+
+theme_error_pages_stack_dir: /srv/theme/error-pages
+theme_error_pages_uid: 2010
+theme_error_pages_image: "nginx:alpine"
