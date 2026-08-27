@@ -1,0 +1,3 @@
+---
+- name: Render the sonarqube stack
+  ansible.builtin.import_tasks: stack.yml

@@ -1,0 +1,10 @@
+---
+sonarqube_service_user: "{{ docker_service_user }}"
+sonarqube_stack_dir: /srv/sonarqube
+
+sonarqube_postgres_uid: 2030
+sonarqube_uid: 2031
+
+sonarqube_postgres_image: "postgres:17-alpine"
+sonarqube_image: "sonarqube:community"
+sonarqube_http_port: 9000

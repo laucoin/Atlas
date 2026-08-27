@@ -21,3 +21,5 @@
       tags: [theme]
     - role: forgejo
       tags: [forgejo]
+    - role: sonarqube
+      tags: [sonarqube]
