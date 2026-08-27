@@ -1,0 +1,32 @@
+---
+- name: Render the homeassistant configuration
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: "{{ homeassistant_stack_dir }}/config/configuration.yaml"
+    owner: "{{ homeassistant_host_uid }}"
+    group: "{{ homeassistant_host_uid }}"
+    mode: "0640"
+  register: homeassistant_configuration
+
+- name: Ensure the hass-oidc-auth custom component directory exists
+  ansible.builtin.file:
+    path: "{{ homeassistant_stack_dir }}/config/custom_components/auth_oidc"
+    state: directory
+    owner: "{{ homeassistant_host_uid }}"
+    group: "{{ homeassistant_host_uid }}"
+    mode: "0750"
+
+- name: Download the pinned hass-oidc-auth release
+  ansible.builtin.get_url:
+    url: "https://github.com/christiaangoossens/hass-oidc-auth/releases/download/{{ homeassistant_oidc_auth_version }}/hass-oidc-auth.zip"
+    dest: "/tmp/hass-oidc-auth-{{ homeassistant_oidc_auth_version }}.zip"
+    mode: "0640"
+
+- name: Install hass-oidc-auth into custom_components
+  ansible.builtin.unarchive:
+    src: "/tmp/hass-oidc-auth-{{ homeassistant_oidc_auth_version }}.zip"
+    dest: "{{ homeassistant_stack_dir }}/config/custom_components/auth_oidc"
+    remote_src: true
+    owner: "{{ homeassistant_host_uid }}"
+    group: "{{ homeassistant_host_uid }}"
+  register: homeassistant_oidc_auth_install

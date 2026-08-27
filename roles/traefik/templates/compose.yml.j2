@@ -2,6 +2,9 @@ networks:
   proxy:
     name: proxy
     driver: bridge
+    ipam:
+      config:
+        - subnet: "{{ atlas_proxy_network_cidr }}"
 
 services:
   traefik:

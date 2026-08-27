@@ -1,0 +1,46 @@
+# Managed by Ansible — roles/homeassistant. Do not edit by hand.
+#
+# What onboarding still has to fill in by hand, once, after first boot:
+# home location (latitude/longitude/unit system), the local recovery
+# account's own password, and the MQTT integration's broker connection
+# (Settings -> Devices & Services -> Add Integration -> MQTT, pointed at
+# mosquitto:{{ homeassistant_mosquitto_port }}, no credentials). All
+# three are UI-only in current Home Assistant, with no documented
+# non-interactive equivalent — not something this file can express.
+default_config:
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - "{{ atlas_proxy_network_cidr }}"
+
+# Delegates human sign-in to Authelia, acting as an OpenID Connect
+# provider (roles/authelia/templates/configuration.yml.j2's
+# identity_providers.oidc) — the third named exception to the gate,
+# per functional/features/home-automation rule 3: this route carries no
+# atlas-gate forwardAuth of its own, because the companion app and
+# inbound webhooks can't follow a portal redirect. This is the
+# integration's own login instead, not the shared gate mechanism every
+# other gated service uses.
+#
+# Public client: no client_secret to manage, matching the integration's
+# own guidance not to use a confidential client without a specific
+# reason to.
+auth_oidc:
+  client_id: "{{ homeassistant_oidc_client_id }}"
+  discovery_url: "https://auth.{{ authelia_session_domain }}/.well-known/openid-configuration"
+  claims:
+    groups: groups
+  # Authelia group "admin" -> Home Assistant admin role. Group
+  # "household" -> Home Assistant's regular user role. Anyone in
+  # neither (collaborator, or no group) is rejected outright, matching
+  # functional/roles-and-permissions: collaborator has no access to
+  # home automation at all.
+  roles:
+    admin: admin
+    user: household
+  features:
+    # Skips the SSO-or-local-password welcome screen by default. The
+    # local recovery account (rule 4) is still reachable at
+    # /?skip_oidc_redirect=true.
+    default_redirect: true

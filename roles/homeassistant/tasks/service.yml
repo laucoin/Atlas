@@ -33,4 +33,5 @@
     name: homeassistant
     state: restarted
   when: >-
-    homeassistant_compose.changed or homeassistant_unit.changed
+    homeassistant_compose.changed or homeassistant_unit.changed or
+    homeassistant_configuration.changed or homeassistant_oidc_auth_install.changed
