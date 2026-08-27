@@ -7,3 +7,6 @@
 
 - name: Activate the authelia service
   ansible.builtin.import_tasks: service.yml
+
+- name: Integrate authelia with traefik
+  ansible.builtin.import_tasks: traefik.yml
