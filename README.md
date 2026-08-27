@@ -31,10 +31,11 @@ atlas/
     docker/              the rootless runtime, the service user, identity mapping
     shell/               zsh, Starship, vim, port-inspection and volume-usage helpers
     traefik/              rootless reverse proxy, wildcard certificate via DNS-01
-    authelia/              the gate — database, session store, config, users
+    authelia/              the gate — database, session store, config, users, traefik integration
+    theme/                 palette, error pages, the generated dashboard
 ```
 
-**Phase 1 / Foundation is complete.** In Phase 2, `traefik` and `authelia` are complete in code; `theme` is next, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan). **Nothing in Phase 2 has been run against the real host yet** — see the note below.
+**Phase 1 / Foundation and Phase 2 / Ingress and identity are both complete in code.** `traefik`, `authelia` and `theme` all exist. Phase 3 (registry, code quality, home automation, object storage, hosted apps) is next, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan). **Nothing in Phase 2 has been run against the real host yet** — see the note below.
 
 > **A note on the real host.** SSH reconnaissance while reconciling the `storage` role found Atlas already running a hand-built reference deployment under `/srv` — a privileged (non-rootless) `traefik`, `authentik` rather than `authelia`, TLS-ALPN-01 rather than DNS-01. Confirmed disposable, but Phase 2 stays planning-only (code written, PRs open, nothing converged) until that's resolved deliberately rather than by accident.
 
@@ -66,6 +67,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `roles/shell/defaults/main.yml` | `shell_targets` (admin + root) and the pinned Starship version | see the role |
 | `roles/traefik/defaults/main.yml` | `atlas_domain`, `atlas_acme_email`, ports, image | `laucoin.fr`, the maintainer's real address |
 | `roles/authelia/defaults/main.yml` | `authelia_session_domain`, SMTP host/port, `authelia_users` (empty until a real account is declared) | `atlas.laucoin.fr`, `smtp.gmail.com` |
+| `roles/theme/defaults/main.yml` | `atlas_palette` (light/dark), `atlas_services` (empty until a Phase 3 role declares one) | Apple's system blue; see the role |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
 | `inventory/**/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — first needed by `traefik`'s DNS-01 credentials, then `authelia`'s secrets (session/storage keys, DB/Redis passwords, SMTP credentials) |
 | `.sops.yaml` | Which age key new secrets get encrypted for | `CHANGE_ME_AGE_PUBLIC_KEY` — replace before creating the first secret |
@@ -89,7 +91,7 @@ There is no automated test suite, by choice — idempotency is enforced by how r
 ansible-playbook playbooks/site.yml --check --diff   # review first, always
 ansible-playbook playbooks/site.yml                  # apply
 ansible-playbook playbooks/site.yml                  # re-run immediately: must report zero changes
-ansible-playbook playbooks/site.yml --tags authelia   # converge one role only
+ansible-playbook playbooks/site.yml --tags theme      # converge one role only
 
 # Storage never changes as part of the above — site.yml only asserts it.
 # Provisioning is separate and requires explicit confirmation:
