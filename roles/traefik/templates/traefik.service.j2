@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas stack: traefik
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ traefik_service_user }}
+Group={{ traefik_service_user }}
+WorkingDirectory={{ traefik_stack_dir }}
+Environment=DOCKER_HOST=unix:///run/user/{{ traefik_service_uid }}/docker.sock
+ExecStart=/usr/bin/docker compose -f {{ traefik_stack_dir }}/compose.yml up
+ExecStop=/usr/bin/docker compose -f {{ traefik_stack_dir }}/compose.yml down
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

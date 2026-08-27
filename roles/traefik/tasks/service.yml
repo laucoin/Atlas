@@ -1,0 +1,35 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ traefik_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    traefik_service_uid: "{{ ansible_facts.getent_passwd[traefik_service_user][1] }}"
+
+- name: Render the traefik systemd unit
+  ansible.builtin.template:
+    src: traefik.service.j2
+    dest: /etc/systemd/system/traefik.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: traefik_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: traefik_unit.changed
+
+- name: Enable and start the traefik stack
+  ansible.builtin.systemd:
+    name: traefik
+    enabled: true
+    state: started
+
+- name: Restart the traefik stack if its configuration changed
+  ansible.builtin.systemd:
+    name: traefik
+    state: restarted
+  when: traefik_compose.changed or traefik_unit.changed
