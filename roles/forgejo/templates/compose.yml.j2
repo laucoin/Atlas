@@ -40,6 +40,11 @@ services:
     user: "{{ forgejo_uid }}:{{ forgejo_uid }}"
     tmpfs:
       - /tmp
+    # git subprocesses want a resolvable HOME; the arbitrary numeric UID
+    # above has no matching /etc/passwd entry inside the container to
+    # supply one automatically.
+    environment:
+      HOME: /data/git
     depends_on:
       - postgres
     ports:

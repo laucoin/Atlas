@@ -1,0 +1,9 @@
+---
+- name: Render the forgejo configuration
+  ansible.builtin.template:
+    src: app.ini.j2
+    dest: "{{ forgejo_stack_dir }}/config/app.ini"
+    owner: "{{ forgejo_host_uid }}"
+    group: "{{ forgejo_host_uid }}"
+    mode: "0640"
+  register: forgejo_configuration
