@@ -1,0 +1,9 @@
+---
+- name: Render the sonarqube configuration
+  ansible.builtin.template:
+    src: sonar.properties.j2
+    dest: "{{ sonarqube_stack_dir }}/config/sonar.properties"
+    owner: "{{ sonarqube_host_uid }}"
+    group: "{{ sonarqube_host_uid }}"
+    mode: "0640"
+  register: sonarqube_configuration
