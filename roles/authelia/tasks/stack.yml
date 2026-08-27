@@ -11,6 +11,7 @@
   ansible.builtin.set_fact:
     authelia_postgres_host_uid: "{{ docker_subuid_start + authelia_postgres_uid - 1 }}"
     authelia_redis_host_uid: "{{ docker_subuid_start + authelia_redis_uid - 1 }}"
+    authelia_host_uid: "{{ docker_subuid_start + authelia_uid - 1 }}"
 
 - name: Ensure the authelia stack directory exists
   ansible.builtin.file:

@@ -3,8 +3,8 @@
   ansible.builtin.template:
     src: configuration.yml.j2
     dest: "{{ authelia_stack_dir }}/config/configuration.yml"
-    owner: "{{ authelia_service_user }}"
-    group: "{{ authelia_service_user }}"
+    owner: "{{ authelia_host_uid }}"
+    group: "{{ authelia_host_uid }}"
     mode: "0640"
   register: authelia_configuration
 
@@ -12,7 +12,7 @@
   ansible.builtin.template:
     src: users_database.yml.j2
     dest: "{{ authelia_stack_dir }}/config/users_database.yml"
-    owner: "{{ authelia_service_user }}"
-    group: "{{ authelia_service_user }}"
+    owner: "{{ authelia_host_uid }}"
+    group: "{{ authelia_host_uid }}"
     mode: "0600"
   register: authelia_users_database
