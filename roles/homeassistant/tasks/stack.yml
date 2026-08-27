@@ -1,0 +1,33 @@
+---
+# Rootless Docker maps this container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything bind-mounted
+# INTO the container has to be owned by its own mapped UID.
+- name: Compute homeassistant's host-mapped UID
+  ansible.builtin.set_fact:
+    homeassistant_host_uid: "{{ docker_subuid_start + homeassistant_uid - 1 }}"
+
+- name: Ensure the homeassistant stack directory exists
+  ansible.builtin.file:
+    path: "{{ homeassistant_stack_dir }}"
+    state: directory
+    owner: "{{ homeassistant_service_user }}"
+    group: "{{ homeassistant_service_user }}"
+    mode: "0750"
+
+- name: Ensure the config directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ homeassistant_stack_dir }}/config"
+    state: directory
+    owner: "{{ homeassistant_host_uid }}"
+    group: "{{ homeassistant_host_uid }}"
+    mode: "0750"
+
+- name: Render the homeassistant Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ homeassistant_stack_dir }}/compose.yml"
+    owner: "{{ homeassistant_service_user }}"
+    group: "{{ homeassistant_service_user }}"
+    mode: "0640"
+  register: homeassistant_compose
