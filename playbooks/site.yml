@@ -15,3 +15,5 @@
       tags: [shell]
     - role: traefik
       tags: [traefik]
+    - role: authelia
+      tags: [authelia]

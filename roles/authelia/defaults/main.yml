@@ -1,0 +1,8 @@
+---
+authelia_service_user: "{{ docker_service_user }}"
+authelia_stack_dir: /srv/authelia
+authelia_postgres_uid: 2002
+authelia_redis_uid: 2003
+
+authelia_postgres_image: "postgres:17-alpine"
+authelia_redis_image: "redis:7-alpine"
