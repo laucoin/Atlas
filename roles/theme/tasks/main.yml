@@ -1,0 +1,16 @@
+---
+- name: Ensure the shared theme directory exists
+  ansible.builtin.file:
+    path: "{{ theme_shared_dir }}"
+    state: directory
+    owner: "{{ docker_service_user }}"
+    group: "{{ docker_service_user }}"
+    mode: "0755"
+
+- name: Render the shared palette stylesheet
+  ansible.builtin.template:
+    src: palette.css.j2
+    dest: "{{ theme_shared_dir }}/palette.css"
+    owner: "{{ docker_service_user }}"
+    group: "{{ docker_service_user }}"
+    mode: "0644"

@@ -1,0 +1,29 @@
+/* Managed by Ansible — roles/theme. Do not edit by hand.
+   One palette, defined once (roles/theme/defaults), rendered everywhere
+   it is needed, per functional/features/unified-theme rule 1. */
+
+:root {
+  --atlas-accent: {{ atlas_palette.light.accent }};
+  --atlas-background: {{ atlas_palette.light.background }};
+  --atlas-surface: {{ atlas_palette.light.surface }};
+  --atlas-border: {{ atlas_palette.light.border }};
+  --atlas-text: {{ atlas_palette.light.text }};
+  --atlas-text-muted: {{ atlas_palette.light.text_muted }};
+  --atlas-success: {{ atlas_palette.light.success }};
+  --atlas-warning: {{ atlas_palette.light.warning }};
+  --atlas-error: {{ atlas_palette.light.error }};
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --atlas-accent: {{ atlas_palette.dark.accent }};
+    --atlas-background: {{ atlas_palette.dark.background }};
+    --atlas-surface: {{ atlas_palette.dark.surface }};
+    --atlas-border: {{ atlas_palette.dark.border }};
+    --atlas-text: {{ atlas_palette.dark.text }};
+    --atlas-text-muted: {{ atlas_palette.dark.text_muted }};
+    --atlas-success: {{ atlas_palette.dark.success }};
+    --atlas-warning: {{ atlas_palette.dark.warning }};
+    --atlas-error: {{ atlas_palette.dark.error }};
+  }
+}
