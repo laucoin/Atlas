@@ -4,3 +4,13 @@
 # functional/features/registry rule 7 — no code is expected there yet,
 # it just needs to work without reconfiguration when it is.
 forgejo_ssh_port: 2222
+
+forgejo_service_user: "{{ docker_service_user }}"
+forgejo_stack_dir: /srv/forgejo
+forgejo_registry_dir: /srv/registry
+
+forgejo_postgres_uid: 2020
+forgejo_uid: 2021
+forgejo_postgres_image: "postgres:17-alpine"
+forgejo_image: "codeberg.org/forgejo/forgejo:9"
+forgejo_http_port: 3000

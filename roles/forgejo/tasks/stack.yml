@@ -1,0 +1,23 @@
+---
+- name: Ensure the forgejo stack directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ forgejo_service_user }}"
+    group: "{{ forgejo_service_user }}"
+    mode: "0750"
+  loop:
+    - "{{ forgejo_stack_dir }}"
+    - "{{ forgejo_stack_dir }}/data/postgres"
+    - "{{ forgejo_stack_dir }}/data"
+    - "{{ forgejo_stack_dir }}/config"
+    - "{{ forgejo_registry_dir }}"
+
+- name: Render the forgejo Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ forgejo_stack_dir }}/compose.yml"
+    owner: "{{ forgejo_service_user }}"
+    group: "{{ forgejo_service_user }}"
+    mode: "0640"
+  register: forgejo_compose
