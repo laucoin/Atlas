@@ -1,8 +1,13 @@
 ---
+# Bind-mounted into the traefik container (./dynamic:/dynamic:ro), so it
+# needs traefik's own rootless-remapped UID — traefik_host_uid, computed
+# by roles/traefik/tasks/stack.yml and still set as a fact this late in
+# the play, not traefik_service_user (the atlas-docker daemon identity,
+# which the container's namespace has no knowledge of).
 - name: Wire authelia's route and the gate middleware into traefik
   ansible.builtin.template:
     src: traefik-authelia.yml.j2
     dest: "{{ traefik_stack_dir }}/dynamic/authelia.yml"
-    owner: "{{ traefik_service_user }}"
-    group: "{{ traefik_service_user }}"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
     mode: "0640"
