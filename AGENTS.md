@@ -2,9 +2,9 @@
 
 ## 1. Project Context & Documentation Resolution
 
-- **Target Project:** atlas — a single Debian node described entirely in code. One Ansible repository, two container runtimes, roughly a dozen hardened services behind one reverse proxy and one sign-on gate. Deliberately no orchestrator ([ADR 001](https://doc.laucoin.fr/atlas/technical/adr/001-debian-docker-over-talos-kubernetes)).
+- **Target Project:** atlas — a single Debian node described entirely in code. One Ansible repository, one rootless container runtime (the reverse proxy included, reached through an nftables port redirect rather than a privileged process), roughly a dozen hardened services behind one reverse proxy and one sign-on gate. Deliberately no orchestrator ([ADR 001](https://doc.laucoin.fr/atlas/technical/adr/001-debian-docker-over-talos-kubernetes)).
 - **Default Documentation URL:** `https://doc.laucoin.fr/atlas`
-- **Implementation Repository:** the private `atlas/` Ansible repository. It is **separate** from the documentation source — Atlas implementation code never lands in the documentation repository.
+- **Implementation Repository:** the private `atlas/` Ansible repository. It is **separate** from this documentation source — Atlas implementation code never lands here.
 
 ### Agent Rule for Doc Resolution
 
@@ -19,9 +19,11 @@ Before implementing any feature or reading a specification:
 | Section | Holds |
 | ------- | ----- |
 | `functional/features/` | One page per capability — rules, actors, BDD scenarios. The **what** and **why**. |
-| `functional/roles-and-permissions` | The security baseline: actors, roles, trust boundary. Read before any gated feature. |
+| `functional/roles-and-permissions` | The security baseline: actors, roles, trust boundary, accepted risks. Read before any gated feature. |
+| `functional/workflows` | End-to-end BDD scenarios (converge, sign-in, registry push/pull, application onboarding, home automation, backup) — the acceptance behavior a step must reproduce. |
 | `technical/` | Architecture, storage layout, network topology, security model, backup runbooks, Ansible conventions. The **how**. |
 | `technical/implementation-plan` | **The step index.** Its five phases and their role deliverables are the numbered, atomic steps this protocol refers to. |
+| `technical/adr/` | The one recorded architectural decision (no orchestrator) and why nothing else warrants a record. |
 
 ## 2. Communication Style & Behavioral Rules
 
@@ -41,11 +43,12 @@ Strict separation must be maintained between documentation/specs and implementat
 - Break specs into explicit, numbered, atomic steps mapped onto the phases in `technical/implementation-plan` — one step per Ansible role deliverable (e.g., `Phase 1 / Step 3: storage`, `Phase 2 / Step 1: traefik`).
 - Every step carries **acceptance criteria that are either met or not** — never "mostly done". Each step's criteria end with: *a second immediate converge reports zero changes*.
 - Links between pages are **root-absolute** from the docs root (`/atlas/technical/architecture`), never relative; index pages keep their trailing slash.
-- **FORBIDDEN:** Do not touch application source code or `.vitepress/config.ts` during this phase.
+- **FORBIDDEN:** Do not touch the Ansible repository (roles, playbooks, inventory) or `.vitepress/config.mts` during this phase.
 
 ### Phase 2: Implementation via GitHub PR Stacks
 
 - Base implementation **exclusively** on the validated specification step fetched from the resolved documentation source.
+- Implementation happens in the private Ansible repository, not in this documentation repository.
 - Deliver every single implementation step as an isolated GitHub PR stacked on the previous step's branch.
 - Implementation is one Ansible role per concern under `roles/`, composed by `playbooks/site.yml` and tagged so a single service can be converged alone.
 - The **idempotency rules** in `technical/ansible-conventions` replace the absent test harness and are non-negotiable — in particular: no bare commands; render, compare, restart; generate once, persist, reuse; never destroy data outside `playbooks/storage.yml`.
@@ -55,22 +58,23 @@ Strict separation must be maintained between documentation/specs and implementat
 
 To ensure easy, precise, and hazard-free code reviews:
 
-1. **Stack Branching:** For step $N$, create branch `feat/<feature>/0N-<step-name>` branching from `0N-1` (or `main` for step 1). Feature names follow the role names — `feat/hardening/01-ssh-lockdown`, `feat/traefik/02-wildcard-certificate`.
+1. **Stack Branching:** For step $N$, create branch `feat/<feature>/0N-<step-name>` branching from `0N-1` (or `main` for step 1). Feature names follow the role names — `feat/hardening/01-nftables-redirect`, `feat/traefik/02-wildcard-certificate`.
 2. **Atomic Implementation:** Implement ONLY the scope of step $N$ on this branch.
-3. **GitHub PR Creation:** Create/open a Pull Request targeting base branch `feat/<feature>/0N-1` (using `gh pr create --base feat/<feature>/0N-1`).
-4. **Sequential Blocking:** Never start step $N+1$ until step $N$ PR is reviewed or validated.
-5. **Phase order is a dependency order.** Do not open a phase-3 stack while phase 2 is unmerged — the front door exists before anything sits behind it.
+3. **MANDATORY Pre-PR Testing & Verification:**
+  - Run `ansible-playbook playbooks/site.yml --check --diff` and review the plan.
+  - Apply with `ansible-playbook playbooks/site.yml` (or `--tags <role>` for a single service).
+  - **Re-run the converge immediately — it must report zero changes.** Anything else is a defect in the role, not a quirk of the run.
+4. **GitHub PR Creation:** Create/open a Pull Request targeting base branch `feat/<feature>/0N-1` (using `gh pr create --base feat/<feature>/0N-1`).
+5. **Sequential Blocking:** Never start step $N+1$ until step $N$'s PR is reviewed or validated.
+6. **Phase order is a dependency order.** Do not open a phase-3 stack while phase 2 is unmerged — the front door (ingress and identity) exists before anything sits behind it.
 
 ## 5. Requirement Validation & Internal Documentation / README Updates
 
 Before marking any task or PR step as complete:
 
 1. **Validation Against Specification:**
-  - Explicitly verify that the written code strictly matches every functional and technical requirement stated in the documentation — the step's acceptance criteria in `technical/implementation-plan`, and the scenarios in `functional/workflows`.
-  - Atlas has **no automated test suite, by choice.** The verification that replaces it is mandatory and has three parts:
-    - `ansible-playbook playbooks/site.yml --check --diff` reviewed before applying.
-    - The converge applied.
-    - **The converge re-run immediately, reporting zero changes.** Anything else is a defect in the role, not a quirk of the run.
+  - Explicitly verify that the written code strictly matches every functional and technical requirement stated in the documentation — the step's **Accepted when** criteria in `technical/implementation-plan`, and the scenarios in `functional/workflows`.
+  - Atlas has **no automated test suite, by choice.** The verification that replaces it is mandatory and has three parts: plan review (`--check --diff`), the converge applied, and **the converge re-run immediately, reporting zero changes**.
   - Documentation changes are verified with `pnpm build`, which fails on dead links.
 
 2. **README.md & Internal Doc Synchronization:**
@@ -101,7 +105,7 @@ Before marking any task or PR step as complete:
 
 - **Misunderstanding / Bug:** Stop immediately. Do not stack patch commits on a broken PR. Explain the issue in 1 sentence to allow a `git reset`.
 - **Scope Change / Unforeseen Case:** Update the specification documentation FIRST. Do not code until the spec commit is created.
-- **Cosmetic / UI Tweaks:** Keep modifications localized strictly to the relevant visual component within the active branch. Inline `<style scoped>` blocks are split OOCSS-style into `OBJECTS` and `SKINS` sections; no container-descendant selectors.
+- **Cosmetic / UI Tweaks:** Keep modifications localized strictly to the relevant visual component within the active branch (`theme` role: palette, portal styling, error pages). Inline `<style scoped>` blocks are split OOCSS-style into `OBJECTS` and `SKINS` sections; no container-descendant selectors.
 - **Deviation from the documented design** is either corrected, or written down in the specs as an accepted risk. It is never left undocumented.
 
 ## 8. Project Commands
@@ -121,12 +125,13 @@ Before marking any task or PR step as complete:
 - **Build / Verification:** re-run the converge immediately. **Zero changes is the proof.**
 - **Destructive volume work** lives only in `playbooks/storage.yml` and requires an explicit confirmation variable.
 
-## 9. Atlas Invariants
+## 9. Project Invariants
 
-Never violate these without an ADR recording the change:
+Never violate these without updating the relevant spec page to record the change:
 
+- **Rootless, no exceptions.** Every container, including the reverse proxy, runs non-root with capabilities dropped. Ports 80/443 are reached through an nftables redirect at the host firewall, never by a privileged process binding them directly.
 - **One node.** No clustering, no failover, no second server. If the node is down, Atlas is down — accepted, not a defect.
 - **Ansible only.** No Kubernetes, Talos, Helm, Nomad or Swarm.
 - **Manual, watched converges.** No deploy key on the host, no scheduled convergence, no automation with a path into the machine. The age key stays on the workstation.
-- **Everything behind the gate,** except the three named exceptions — registry pull/push, the code-quality scanner API, and home automation. Adding a fourth requires an ADR.
-- **Re-running never destroys data.** Declared volumes survive every converge.
+- **Everything behind the gate,** except the three named exceptions — registry pull/push, the code-quality scanner API, and home automation. Adding a fourth requires updating the security model's exceptions table, not just a route declaration.
+- **Re-running never destroys data.** Declared volumes survive every converge; only `playbooks/storage.yml`, run with an explicit confirmation variable, may remove one.
