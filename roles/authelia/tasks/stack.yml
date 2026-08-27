@@ -50,6 +50,18 @@
     group: "{{ authelia_service_user }}"
     mode: "0750"
 
+# Bind-mounted into the authelia container (./assets:/config/assets:ro,
+# functional/features/unified-theme's accepted risk on portal branding) —
+# needs the container's own mapped UID, same reasoning as config/postgres/
+# redis above.
+- name: Ensure the assets directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ authelia_stack_dir }}/assets"
+    state: directory
+    owner: "{{ authelia_host_uid }}"
+    group: "{{ authelia_host_uid }}"
+    mode: "0750"
+
 - name: Render the authelia Compose file
   ansible.builtin.template:
     src: compose.yml.j2
