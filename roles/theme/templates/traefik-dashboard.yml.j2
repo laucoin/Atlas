@@ -1,0 +1,22 @@
+http:
+  routers:
+    dashboard:
+      rule: "Host(`atlas.{{ atlas_domain }}`)"
+      entrypoints:
+        - websecure
+      service: dashboard
+      tls:
+        certResolver: atlas
+      # Gated per roles-and-permissions: admin/household/collaborator can
+      # all view it, anonymous cannot. Applied per-router, same reasoning
+      # as documented in authelia's own traefik dynamic config: the gate
+      # can't be an entrypoint-level default without breaking the three
+      # named exceptions, so every gated router declares it explicitly.
+      middlewares:
+        - atlas-gate@file
+
+  services:
+    dashboard:
+      loadBalancer:
+        servers:
+          - url: "http://{{ theme_dashboard_container }}:{{ theme_dashboard_port }}"
