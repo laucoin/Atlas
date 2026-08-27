@@ -1,5 +1,10 @@
 server:
   address: "tcp://:9091"
+  # Authelia's only supported branding surface: favicon, logo, locale text.
+  # No colour/stylesheet customisation exists — see the accepted risk in
+  # functional/features/unified-theme. Assets are optional; Authelia falls
+  # back to its own if the directory is empty.
+  asset_path: /config/assets
 
 log:
   level: info

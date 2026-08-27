@@ -69,6 +69,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
 | `inventory/**/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — first needed by `traefik`'s DNS-01 credentials, then `authelia`'s secrets (session/storage keys, DB/Redis passwords, SMTP credentials) |
 | `.sops.yaml` | Which age key new secrets get encrypted for | `CHANGE_ME_AGE_PUBLIC_KEY` — replace before creating the first secret |
+| `/srv/authelia/assets/{favicon.ico,logo.png}` | Optional Atlas branding for the sign-on portal — Authelia's only supported customisation surface, see `functional/features/unified-theme` | not created; Authelia uses its own if absent |
 
 ### Local setup
 
