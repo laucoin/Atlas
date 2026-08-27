@@ -6,3 +6,15 @@ ansible_host: CHANGE_ME
 # first converge connects as root. The hardening role disables root SSH
 # once the admin account and its key are in place.
 ansible_user: root
+
+# The Zigbee coordinator's stable, hardware-specific USB identity — real
+# hardware on the real host, not something Ansible can discover or
+# invent. Find it with `ls -l /dev/serial/by-id/` on the host once the
+# coordinator is plugged in; a by-id path survives reboots and USB
+# re-enumeration, unlike /dev/ttyUSB0. Replace before the first converge.
+homeassistant_zigbee_device: CHANGE_ME
+
+# The coordinator chipset's adapter type, as Zigbee2MQTT identifies it:
+# zstack, ember, deconz, zigbee (ZiGate) or zboss. Check the coordinator's
+# own documentation. Replace before the first converge.
+homeassistant_zigbee_adapter: CHANGE_ME

@@ -1,0 +1,13 @@
+# Anonymous access is deliberate here, not an oversight: this broker has
+# no published port and reaches nothing beyond the homeassistant-internal
+# docker network, which only zigbee2mqtt and homeassistant ever join. The
+# trust boundary is the network itself, same reasoning as authelia's own
+# internal-only postgres/redis, just without a credential layered on top
+# since nothing outside these two containers can ever reach it.
+listener {{ homeassistant_mosquitto_port }}
+allow_anonymous true
+
+persistence true
+persistence_location /mosquitto/data/
+
+log_dest stdout

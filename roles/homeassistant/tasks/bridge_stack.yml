@@ -1,0 +1,62 @@
+---
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything bind-mounted
+# INTO a container has to be owned by ITS OWN mapped UID.
+- name: Compute each container's host-mapped UID
+  ansible.builtin.set_fact:
+    homeassistant_mosquitto_host_uid: "{{ docker_subuid_start + homeassistant_mosquitto_uid - 1 }}"
+    homeassistant_zigbee2mqtt_host_uid: "{{ docker_subuid_start + homeassistant_zigbee2mqtt_uid - 1 }}"
+
+- name: Ensure the bridge stack directory exists
+  ansible.builtin.file:
+    path: "{{ homeassistant_bridge_stack_dir }}"
+    state: directory
+    owner: "{{ homeassistant_service_user }}"
+    group: "{{ homeassistant_service_user }}"
+    mode: "0750"
+
+- name: Ensure each container's data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ homeassistant_bridge_stack_dir }}/{{ item.dir }}/data"
+    state: directory
+    owner: "{{ item.uid }}"
+    group: "{{ item.uid }}"
+    mode: "0750"
+  loop:
+    - { dir: mosquitto, uid: "{{ homeassistant_mosquitto_host_uid }}" }
+    - { dir: zigbee2mqtt, uid: "{{ homeassistant_zigbee2mqtt_host_uid }}" }
+  loop_control:
+    label: "{{ item.dir }}"
+
+- name: Render mosquitto's configuration
+  ansible.builtin.template:
+    src: mosquitto.conf.j2
+    dest: "{{ homeassistant_bridge_stack_dir }}/mosquitto/mosquitto.conf"
+    owner: "{{ homeassistant_mosquitto_host_uid }}"
+    group: "{{ homeassistant_mosquitto_host_uid }}"
+    mode: "0640"
+  register: homeassistant_mosquitto_configuration
+
+# force: false — zigbee2mqtt rewrites this file with its own generated
+# network key once it first boots. Re-rendering it on every converge
+# would reset that key on every run, tearing down the Zigbee mesh and
+# forcing every device to be re-paired. This only lays down the initial
+# bootstrap file; it is never touched again once zigbee2mqtt owns it.
+- name: Render zigbee2mqtt's initial configuration, once only
+  ansible.builtin.template:
+    src: zigbee2mqtt-configuration.yaml.j2
+    dest: "{{ homeassistant_bridge_stack_dir }}/zigbee2mqtt/data/configuration.yaml"
+    owner: "{{ homeassistant_zigbee2mqtt_host_uid }}"
+    group: "{{ homeassistant_zigbee2mqtt_host_uid }}"
+    mode: "0640"
+    force: false
+
+- name: Render the bridge Compose file
+  ansible.builtin.template:
+    src: bridge-compose.yml.j2
+    dest: "{{ homeassistant_bridge_stack_dir }}/compose.yml"
+    owner: "{{ homeassistant_service_user }}"
+    group: "{{ homeassistant_service_user }}"
+    mode: "0640"
+  register: homeassistant_bridge_compose

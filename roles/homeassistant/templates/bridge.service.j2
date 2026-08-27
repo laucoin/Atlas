@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas stack: homeassistant-bridge (mosquitto + zigbee2mqtt)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ homeassistant_service_user }}
+Group={{ homeassistant_service_user }}
+WorkingDirectory={{ homeassistant_bridge_stack_dir }}
+Environment=DOCKER_HOST=unix:///run/user/{{ homeassistant_service_uid }}/docker.sock
+ExecStart=/usr/bin/docker compose -f {{ homeassistant_bridge_stack_dir }}/compose.yml up
+ExecStop=/usr/bin/docker compose -f {{ homeassistant_bridge_stack_dir }}/compose.yml down
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

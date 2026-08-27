@@ -1,0 +1,17 @@
+---
+homeassistant_service_user: "{{ docker_service_user }}"
+
+# The Zigbee coordinator and its MQTT broker are a separate stack from
+# Home Assistant itself, on their own systemd unit — so restarting or
+# redeploying the automation application never touches the radio network
+# or forces every device to re-pair, per functional/features/home-
+# automation rule 2.
+homeassistant_bridge_stack_dir: /srv/homeassistant-bridge
+homeassistant_bridge_network: homeassistant-internal
+
+homeassistant_mosquitto_uid: 2040
+homeassistant_mosquitto_image: "eclipse-mosquitto:2.1.2"
+homeassistant_mosquitto_port: 1883
+
+homeassistant_zigbee2mqtt_uid: 2041
+homeassistant_zigbee2mqtt_image: "ghcr.io/koenkk/zigbee2mqtt:2.13.0"
