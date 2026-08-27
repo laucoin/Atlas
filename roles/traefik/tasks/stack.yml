@@ -1,21 +1,39 @@
 ---
-- name: Ensure the traefik stack directories exist
+# Rootless Docker maps this container's non-zero internal UID
+# (traefik_uid) to a DIFFERENT host UID than the atlas-docker daemon
+# user itself — namespace UID 0 maps to the invoking user, but N>0 maps
+# into the declared subuid range (docker/defaults) as docker_subuid_start
+# + N - 1. Anything actually bind-mounted INTO the container has to be
+# owned by that mapped UID, or the container can't read it (let alone
+# write it) — a file merely readable by the atlas-docker *group* doesn't
+# help, since that identity doesn't exist inside the container's
+# namespace at all.
+- name: Compute traefik's host-mapped UID
+  ansible.builtin.set_fact:
+    traefik_host_uid: "{{ docker_subuid_start + traefik_uid - 1 }}"
+
+- name: Ensure the traefik stack directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ traefik_stack_dir }}"
     state: directory
     owner: "{{ traefik_service_user }}"
     group: "{{ traefik_service_user }}"
     mode: "0750"
-  loop:
-    - "{{ traefik_stack_dir }}"
-    - "{{ traefik_stack_dir }}/dynamic"
+
+- name: Ensure the dynamic config directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ traefik_stack_dir }}/dynamic"
+    state: directory
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
+    mode: "0750"
 
 - name: Ensure acme.json exists with the permissions ACME requires
   ansible.builtin.file:
     path: "{{ traefik_stack_dir }}/acme.json"
     state: touch
-    owner: "{{ traefik_service_user }}"
-    group: "{{ traefik_service_user }}"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
     mode: "0600"
     modification_time: preserve
     access_time: preserve
