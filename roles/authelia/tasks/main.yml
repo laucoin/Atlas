@@ -1,3 +1,6 @@
 ---
 - name: Render the authelia database stack
   ansible.builtin.import_tasks: stack.yml
+
+- name: Render the authelia configuration
+  ansible.builtin.import_tasks: configuration.yml

@@ -10,3 +10,15 @@ authelia_redis_image: "redis:7-alpine"
 authelia_uid: 2001
 authelia_image: "authelia/authelia:4.39"
 authelia_port: 9091
+
+# The parent domain every gated route lives under, so one session cookie
+# covers all of them. atlas.laucoin.fr, not the bare registrar domain.
+authelia_session_domain: "atlas.{{ atlas_domain }}"
+
+authelia_smtp_host: smtp.gmail.com
+authelia_smtp_port: 587
+
+# No accounts declared yet — the maintainer's own account is a secret
+# (password hash), added once inventory/group_vars/all/authelia.sops.yaml
+# exists. Empty renders as valid, working Authelia config either way.
+authelia_users: []

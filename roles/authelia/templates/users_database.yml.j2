@@ -1,0 +1,16 @@
+---
+{% if authelia_users %}
+users:
+{% for user in authelia_users %}
+  {{ user.username }}:
+    displayname: "{{ user.displayname }}"
+    password: "{{ user.password_hash }}"
+    email: "{{ user.email }}"
+    groups:
+{% for group in user.groups %}
+      - {{ group }}
+{% endfor %}
+{% endfor %}
+{% else %}
+users: {}
+{% endif %}
