@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas stack: authelia
+After=network-online.target docker.service traefik.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ authelia_service_user }}
+Group={{ authelia_service_user }}
+WorkingDirectory={{ authelia_stack_dir }}
+Environment=DOCKER_HOST=unix:///run/user/{{ authelia_service_uid }}/docker.sock
+ExecStart=/usr/bin/docker compose -f {{ authelia_stack_dir }}/compose.yml up
+ExecStop=/usr/bin/docker compose -f {{ authelia_stack_dir }}/compose.yml down
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

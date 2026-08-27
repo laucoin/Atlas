@@ -30,9 +30,13 @@ atlas/
     storage/             volume assertion (site.yml) and reconciliation (storage.yml)
     docker/              the rootless runtime, the service user, identity mapping
     shell/               zsh, Starship, vim, port-inspection and volume-usage helpers
+    traefik/              rootless reverse proxy, wildcard certificate via DNS-01
+    authelia/              the gate — database, session store, config, users
 ```
 
-**Phase 1 / Foundation is complete**: `base`, `hardening`, `storage`, `docker` and `shell` all exist. Phase 2 (`traefik`, `authelia`, `theme`) is next, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
+**Phase 1 / Foundation is complete.** In Phase 2, `traefik` and `authelia` are complete in code; `theme` is next, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan). **Nothing in Phase 2 has been run against the real host yet** — see the note below.
+
+> **A note on the real host.** SSH reconnaissance while reconciling the `storage` role found Atlas already running a hand-built reference deployment under `/srv` — a privileged (non-rootless) `traefik`, `authentik` rather than `authelia`, TLS-ALPN-01 rather than DNS-01. Confirmed disposable, but Phase 2 stays planning-only (code written, PRs open, nothing converged) until that's resolved deliberately rather than by accident.
 
 ## How to install and use it? ⚙️
 
@@ -60,8 +64,10 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `roles/storage/defaults/main.yml` | `storage_volume_group` and the five managed volumes (mount, size) | `vg_atlas`; see the role for the full list |
 | `roles/docker/defaults/main.yml` | `docker_service_user` and its subordinate UID/GID range | `atlas-docker`; `100000`-`165535` |
 | `roles/shell/defaults/main.yml` | `shell_targets` (admin + root) and the pinned Starship version | see the role |
+| `roles/traefik/defaults/main.yml` | `atlas_domain`, `atlas_acme_email`, ports, image | `laucoin.fr`, the maintainer's real address |
+| `roles/authelia/defaults/main.yml` | `authelia_session_domain`, SMTP host/port, `authelia_users` (empty until a real account is declared) | `atlas.laucoin.fr`, `smtp.gmail.com` |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
-| `inventory/**/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — first needed by `traefik`'s DNS-01 credentials |
+| `inventory/**/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — first needed by `traefik`'s DNS-01 credentials, then `authelia`'s secrets (session/storage keys, DB/Redis passwords, SMTP credentials) |
 | `.sops.yaml` | Which age key new secrets get encrypted for | `CHANGE_ME_AGE_PUBLIC_KEY` — replace before creating the first secret |
 
 ### Local setup
@@ -82,7 +88,7 @@ There is no automated test suite, by choice — idempotency is enforced by how r
 ansible-playbook playbooks/site.yml --check --diff   # review first, always
 ansible-playbook playbooks/site.yml                  # apply
 ansible-playbook playbooks/site.yml                  # re-run immediately: must report zero changes
-ansible-playbook playbooks/site.yml --tags docker     # converge one role only
+ansible-playbook playbooks/site.yml --tags authelia   # converge one role only
 
 # Storage never changes as part of the above — site.yml only asserts it.
 # Provisioning is separate and requires explicit confirmation:

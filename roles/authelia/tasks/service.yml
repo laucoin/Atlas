@@ -1,0 +1,37 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ authelia_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    authelia_service_uid: "{{ ansible_facts.getent_passwd[authelia_service_user][1] }}"
+
+- name: Render the authelia systemd unit
+  ansible.builtin.template:
+    src: authelia.service.j2
+    dest: /etc/systemd/system/authelia.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: authelia_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: authelia_unit.changed
+
+- name: Enable and start the authelia stack
+  ansible.builtin.systemd:
+    name: authelia
+    enabled: true
+    state: started
+
+- name: Restart the authelia stack if its configuration changed
+  ansible.builtin.systemd:
+    name: authelia
+    state: restarted
+  when: >-
+    authelia_compose.changed or authelia_configuration.changed or
+    authelia_users_database.changed or authelia_unit.changed
