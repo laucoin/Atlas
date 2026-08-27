@@ -49,5 +49,6 @@ services:
       - "--entrypoints.websecure.http.tls.certresolver=atlas"
       - "--entrypoints.websecure.http.tls.domains[0].main=atlas.{{ atlas_domain }}"
       - "--entrypoints.websecure.http.tls.domains[0].sans=*.atlas.{{ atlas_domain }}"
+      - "--entrypoints.websecure.http.middlewares=atlas-errors@file"
     networks:
       - proxy
