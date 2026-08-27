@@ -1,15 +1,40 @@
 ---
-- name: Ensure the authelia stack directories exist
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — namespace UID 0
+# maps to the invoking user, N>0 maps into the declared subuid range
+# (docker/defaults) as docker_subuid_start + N - 1. Anything bind-mounted
+# INTO a container has to be owned by ITS OWN mapped UID, per container —
+# postgres and redis are two different containers with two different
+# UIDs, so they need two different computed owners, not one shared
+# "authelia" identity.
+- name: Compute each container's host-mapped UID
+  ansible.builtin.set_fact:
+    authelia_postgres_host_uid: "{{ docker_subuid_start + authelia_postgres_uid - 1 }}"
+    authelia_redis_host_uid: "{{ docker_subuid_start + authelia_redis_uid - 1 }}"
+
+- name: Ensure the authelia stack directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ authelia_stack_dir }}"
     state: directory
     owner: "{{ authelia_service_user }}"
     group: "{{ authelia_service_user }}"
     mode: "0750"
-  loop:
-    - "{{ authelia_stack_dir }}"
-    - "{{ authelia_stack_dir }}/data/postgres"
-    - "{{ authelia_stack_dir }}/data/redis"
+
+- name: Ensure the postgres data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ authelia_stack_dir }}/data/postgres"
+    state: directory
+    owner: "{{ authelia_postgres_host_uid }}"
+    group: "{{ authelia_postgres_host_uid }}"
+    mode: "0750"
+
+- name: Ensure the redis data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ authelia_stack_dir }}/data/redis"
+    state: directory
+    owner: "{{ authelia_redis_host_uid }}"
+    group: "{{ authelia_redis_host_uid }}"
+    mode: "0750"
 
 - name: Render the authelia Compose file
   ansible.builtin.template:
