@@ -17,3 +17,5 @@
       tags: [traefik]
     - role: authelia
       tags: [authelia]
+    - role: theme
+      tags: [theme]

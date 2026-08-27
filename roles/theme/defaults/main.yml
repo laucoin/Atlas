@@ -1,0 +1,30 @@
+---
+theme_shared_dir: /srv/theme
+
+# Apple's system blue — "system blue" evokes exactly this well-known design
+# language ("in the manner of a well-made desktop operating system", per
+# functional/features/unified-theme). Semantic colors (success/warning/
+# error) are drawn from the same design system, so the palette reads as one
+# coherent whole rather than an accent color paired with arbitrary status
+# colors.
+atlas_palette:
+  light:
+    accent: "#007AFF"
+    background: "#FFFFFF"
+    surface: "#F5F5F7"
+    border: "#D2D2D7"
+    text: "#1D1D1F"
+    text_muted: "#6E6E73"
+    success: "#34C759"
+    warning: "#FF9500"
+    error: "#FF3B30"
+  dark:
+    accent: "#0A84FF"
+    background: "#000000"
+    surface: "#1C1C1E"
+    border: "#38383A"
+    text: "#F5F5F7"
+    text_muted: "#98989D"
+    success: "#30D158"
+    warning: "#FF9F0A"
+    error: "#FF453A"
