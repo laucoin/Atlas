@@ -1,0 +1,21 @@
+http:
+  routers:
+    # NOT gated — the third named exception to atlas-gate, per
+    # functional/features/home-automation rule 3: the companion app and
+    # inbound webhooks can't follow atlas-gate's portal redirect, so
+    # this route carries no forwardAuth middleware at all. Sign-in is
+    # the OIDC integration itself (04-authelia-oidc-provider), enforced
+    # by Home Assistant, not by anything at this layer.
+    homeassistant:
+      rule: "Host(`homeassistant.atlas.{{ atlas_domain }}`)"
+      entrypoints:
+        - websecure
+      service: homeassistant
+      tls:
+        certResolver: atlas
+
+  services:
+    homeassistant:
+      loadBalancer:
+        servers:
+          - url: "http://homeassistant:{{ homeassistant_http_port }}"

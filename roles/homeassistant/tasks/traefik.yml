@@ -1,0 +1,11 @@
+---
+# Bind-mounted into the traefik container (./dynamic:/dynamic:ro), so it
+# needs traefik's own rootless-remapped UID — traefik_host_uid, not
+# homeassistant_service_user.
+- name: Wire homeassistant's route into traefik
+  ansible.builtin.template:
+    src: traefik-homeassistant.yml.j2
+    dest: "{{ traefik_stack_dir }}/dynamic/homeassistant.yml"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
+    mode: "0640"

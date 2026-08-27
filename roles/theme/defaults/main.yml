@@ -48,3 +48,6 @@ atlas_services:
   - name: SonarQube
     subdomain: sonarqube
     description: Code quality and technical debt tracking
+  - name: Home Assistant
+    subdomain: homeassistant
+    description: Home automation and energy monitoring
