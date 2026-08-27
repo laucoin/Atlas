@@ -1,0 +1,67 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ docker_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    theme_service_uid: "{{ ansible_facts.getent_passwd[docker_service_user][1] }}"
+
+- name: Render the error-pages systemd unit
+  ansible.builtin.template:
+    src: static-stack.service.j2
+    dest: /etc/systemd/system/atlas-error-pages.service
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    stack_name: error-pages
+    stack_dir: "{{ theme_error_pages_stack_dir }}"
+  register: theme_error_pages_unit
+
+- name: Reload systemd if the error-pages unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: theme_error_pages_unit.changed
+
+- name: Enable and start the error-pages stack
+  ansible.builtin.systemd:
+    name: atlas-error-pages
+    enabled: true
+    state: started
+
+- name: Restart the error-pages stack if its configuration changed
+  ansible.builtin.systemd:
+    name: atlas-error-pages
+    state: restarted
+  when: theme_error_pages_compose.changed or theme_error_pages_unit.changed
+
+- name: Render the dashboard systemd unit
+  ansible.builtin.template:
+    src: static-stack.service.j2
+    dest: /etc/systemd/system/atlas-dashboard.service
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    stack_name: dashboard
+    stack_dir: "{{ theme_dashboard_stack_dir }}"
+  register: theme_dashboard_unit
+
+- name: Reload systemd if the dashboard unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: theme_dashboard_unit.changed
+
+- name: Enable and start the dashboard stack
+  ansible.builtin.systemd:
+    name: atlas-dashboard
+    enabled: true
+    state: started
+
+- name: Restart the dashboard stack if its configuration changed
+  ansible.builtin.systemd:
+    name: atlas-dashboard
+    state: restarted
+  when: theme_dashboard_compose.changed or theme_dashboard_unit.changed
