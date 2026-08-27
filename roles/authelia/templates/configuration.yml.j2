@@ -31,6 +31,42 @@ storage:
     username: authelia
     password: "{{ authelia_postgres_password }}"
 
+# Authelia acting as an OpenID Connect PROVIDER, not just forwardAuth —
+# the first (and so far only) service that needs this. Home automation's
+# companion app and inbound webhooks can't follow atlas-gate's portal
+# redirect (functional/features/home-automation rule 3, the third named
+# exception to the gate), so it authenticates by talking to Authelia
+# directly as an OIDC relying party instead of sitting behind the shared
+# gate the way every other protected service does.
+identity_providers:
+  oidc:
+    hmac_secret: "{{ authelia_oidc_hmac_secret }}"
+    jwks:
+      - key_id: primary
+        algorithm: RS256
+        use: sig
+        # A PEM key is inherently multi-line, so this has to be a YAML
+        # block scalar, not a quoted one — a plain "key: {{ var }}"
+        # would embed raw newlines inside a quoted string, which isn't
+        # valid YAML.
+        key: |
+          {{ authelia_oidc_issuer_private_key | indent(10) }}
+    clients:
+      # Public client (no client_secret): PKCE plus a registered
+      # redirect URI is enough security for a home network, and avoids
+      # holding yet another secret — hass-oidc-auth's own docs actively
+      # discourage a confidential client "if you don't know what you are
+      # doing." authorization_policy is Authelia's own default for a
+      # client this way; set explicitly rather than relied on silently.
+      - client_id: homeassistant
+        client_name: Home Assistant
+        public: true
+        authorization_policy: two_factor
+        require_pkce: true
+        pkce_challenge_method: S256
+        redirect_uris:
+          - "https://homeassistant.{{ authelia_session_domain }}/auth/oidc/callback"
+
 notifier:
   smtp:
     address: "submission://{{ authelia_smtp_host }}:{{ authelia_smtp_port }}"
