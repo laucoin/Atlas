@@ -53,6 +53,6 @@
   ansible.builtin.template:
     src: traefik-errors.yml.j2
     dest: "{{ traefik_stack_dir }}/dynamic/errors.yml"
-    owner: "{{ traefik_service_user }}"
-    group: "{{ traefik_service_user }}"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
     mode: "0640"
