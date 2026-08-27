@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas</title>
+<style>
+  :root {
+    --atlas-accent: {{ atlas_palette.light.accent }};
+    --atlas-background: {{ atlas_palette.light.background }};
+    --atlas-surface: {{ atlas_palette.light.surface }};
+    --atlas-border: {{ atlas_palette.light.border }};
+    --atlas-text: {{ atlas_palette.light.text }};
+    --atlas-text-muted: {{ atlas_palette.light.text_muted }};
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --atlas-accent: {{ atlas_palette.dark.accent }};
+      --atlas-background: {{ atlas_palette.dark.background }};
+      --atlas-surface: {{ atlas_palette.dark.surface }};
+      --atlas-border: {{ atlas_palette.dark.border }};
+      --atlas-text: {{ atlas_palette.dark.text }};
+      --atlas-text-muted: {{ atlas_palette.dark.text_muted }};
+    }
+  }
+  body {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--atlas-background);
+    color: var(--atlas-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .card {
+    text-align: center;
+    padding: 3rem;
+    border: 1px solid var(--atlas-border);
+    border-radius: 12px;
+    background: var(--atlas-surface);
+  }
+  h1 { color: var(--atlas-accent); margin: 0 0 0.5rem; }
+  p { color: var(--atlas-text-muted); margin: 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Something went wrong</h1>
+    <p>Atlas couldn't complete this request. Try again shortly.</p>
+  </div>
+</body>
+</html>
