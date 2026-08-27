@@ -45,6 +45,15 @@ notifier:
 access_control:
   default_policy: deny
   rules:
+    # sonarqube: admin and collaborator only, per functional/roles-and-
+    # permissions (household has no access to code quality at all).
+    # Must precede the wildcard rule below — Authelia evaluates rules
+    # top-to-bottom and applies the first match.
+    - domain: "sonarqube.{{ authelia_session_domain }}"
+      policy: two_factor
+      subject:
+        - "group:admin"
+        - "group:collaborator"
     - domain: "*.{{ authelia_session_domain }}"
       policy: two_factor
 
