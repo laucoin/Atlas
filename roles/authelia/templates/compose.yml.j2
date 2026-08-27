@@ -45,3 +45,33 @@ services:
       - ./data/redis:/data
     networks:
       - internal
+
+  authelia:
+    image: {{ authelia_image }}
+    container_name: authelia
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ authelia_uid }}:{{ authelia_uid }}"
+    tmpfs:
+      - /tmp
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "127.0.0.1:{{ authelia_port }}:9091"
+    healthcheck:
+      test: ["CMD", "authelia", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./config/configuration.yml:/config/configuration.yml:ro
+      - ./config/users_database.yml:/config/users_database.yml:ro
+    networks:
+      - proxy
+      - internal
