@@ -1,0 +1,25 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+
+services:
+  error-pages:
+    image: {{ theme_error_pages_image }}
+    container_name: atlas-error-pages
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ theme_error_pages_uid }}:{{ theme_error_pages_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - proxy
