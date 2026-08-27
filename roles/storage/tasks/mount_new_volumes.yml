@@ -1,0 +1,35 @@
+---
+# Refresh first: /var/log and /srv were mounted by their own dedicated
+# steps earlier in this same run, but ansible_mounts is a snapshot from
+# before the play started and doesn't know that yet. Without refreshing,
+# this task would treat them as still-unmounted and try to handle them
+# again, redundantly (and incorrectly) alongside their own migration
+# logic.
+- name: Refresh mount facts before mounting newly-declared volumes
+  ansible.builtin.setup:
+    gather_subset:
+      - mounts
+
+- name: Determine which declared volumes are not yet mounted
+  ansible.builtin.set_fact:
+    storage_unmounted_volumes: "{{ storage_volumes | rejectattr('mount', 'in', ansible_mounts | map(attribute='mount') | list) | list }}"
+
+- name: Ensure newly-declared volumes' mount points exist
+  ansible.builtin.file:
+    path: "{{ item.mount }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ storage_unmounted_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Mount and persist newly-declared volumes
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "/dev/{{ storage_volume_group }}/{{ item.lv }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+  loop: "{{ storage_unmounted_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
