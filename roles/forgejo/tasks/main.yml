@@ -4,3 +4,9 @@
 
 - name: Render the forgejo configuration
   ansible.builtin.import_tasks: configuration.yml
+
+- name: Activate the forgejo service
+  ansible.builtin.import_tasks: service.yml
+
+- name: Integrate forgejo with traefik
+  ansible.builtin.import_tasks: traefik.yml

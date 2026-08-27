@@ -1,0 +1,20 @@
+http:
+  routers:
+    forgejo:
+      rule: "Host(`forgejo.atlas.{{ atlas_domain }}`)"
+      entrypoints:
+        - websecure
+      service: forgejo
+      tls:
+        certResolver: atlas
+      # NOT gated — one of the three named exceptions in
+      # functional/roles-and-permissions (registry rule 4): container
+      # tooling (docker push/pull, git-over-SSH) cannot complete a portal
+      # login. Forgejo's own web login and registry tokens are the
+      # access control here, not atlas-gate.
+
+  services:
+    forgejo:
+      loadBalancer:
+        servers:
+          - url: "http://forgejo:{{ forgejo_http_port }}"

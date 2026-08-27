@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas stack: forgejo
+After=network-online.target docker.service traefik.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ forgejo_service_user }}
+Group={{ forgejo_service_user }}
+WorkingDirectory={{ forgejo_stack_dir }}
+Environment=DOCKER_HOST=unix:///run/user/{{ forgejo_service_uid }}/docker.sock
+ExecStart=/usr/bin/docker compose -f {{ forgejo_stack_dir }}/compose.yml up
+ExecStop=/usr/bin/docker compose -f {{ forgejo_stack_dir }}/compose.yml down
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
