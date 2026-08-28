@@ -1,0 +1,19 @@
+---
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning.
+- name: Compute this application's postgres UID
+  ansible.builtin.set_fact:
+    app_postgres_uid: "{{ app_postgres_uid_range_start + app_index }}"
+
+- name: Compute this application's postgres host-mapped UID
+  ansible.builtin.set_fact:
+    app_postgres_host_uid: "{{ docker_subuid_start + (app_postgres_uid | int) - 1 }}"
+
+- name: Ensure this application's postgres data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ app_stack_dir }}/{{ app.name }}/data-postgres"
+    state: directory
+    owner: "{{ app_postgres_host_uid }}"
+    group: "{{ app_postgres_host_uid }}"
+    mode: "0750"

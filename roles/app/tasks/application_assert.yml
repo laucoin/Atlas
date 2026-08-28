@@ -1,0 +1,33 @@
+---
+- name: Assert the declaration is complete and valid
+  ansible.builtin.assert:
+    that:
+      - app.name is defined
+      - app.image is defined
+      - app.digest is defined
+      - app.digest is match("^sha256:[0-9a-f]{64}$")
+      - app.environment is defined
+      - app.environment in ["production", "staging"]
+    fail_msg: >-
+      Application '{{ app.name | default("(unnamed)") }}' has an
+      invalid declaration. name, image, digest and environment are all
+      required; digest must be a full sha256 reference
+      (sha256:<64 hex characters>); environment must be exactly
+      "production" or "staging".
+    quiet: true
+
+# The fifth capability technical/ansible-conventions.md names — an
+# object-storage bucket — depends on garage, which doesn't exist yet.
+# Failing loudly here beats silently ignoring a declared field: a
+# converge that appeared to succeed while quietly not doing what the
+# repository says it does would be a worse outcome than stopping.
+- name: Assert no application requests object storage yet
+  ansible.builtin.assert:
+    that:
+      - not (app.bucket | default(false))
+    fail_msg: >-
+      Application '{{ app.name }}' declares bucket: true, but object
+      storage isn't implemented yet — it depends on garage, which
+      hasn't been built. Remove the bucket declaration, or use storage
+      instead if a plain persistent volume is enough for now.
+    quiet: true

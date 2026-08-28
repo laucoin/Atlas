@@ -1,0 +1,47 @@
+---
+app_service_user: "{{ docker_service_user }}"
+app_stack_dir: /srv/app
+
+# Each hosted application's own dedicated PostgreSQL instance gets a
+# unique internal UID computed from its position in the declared list
+# (this range start + index) — postgres is something this role fully
+# controls, unlike an application's own image, so it gets the same
+# "one clean, unique UID per instance" treatment as every other role's
+# own postgres container. Chosen above every fixed infrastructure UID
+# claimed so far (the highest is observability's own, at 2053).
+app_postgres_uid_range_start: 2100
+
+# The maintainer's own images almost always run as this UID unless
+# their own Dockerfile says otherwise — override per application with
+# its own `uid:` field if it doesn't. Two different applications
+# happening to share the same internal UID is harmless: Docker's own
+# bind-mount isolation, not UID uniqueness, is what actually separates
+# one application's data from another's.
+app_default_uid: 1000
+
+# No applications declared yet. Each entry:
+#   name         (required) — also the default subdomain and the
+#                container name prefix
+#   image        (required) — without a tag; digest pins the version
+#   digest       (required) — sha256:<64 hex chars>, from the registry
+#   environment  (required) — production | staging; staging is always
+#                gated regardless of `public` (functional/features/
+#                app-hosting rule 5)
+#   database     (optional, default false) — a dedicated PostgreSQL
+#                instance on the application's own private network
+#   storage      (optional, default false) — a persistent data
+#                directory bind-mounted into the container
+#   storage_path (optional, default /data) — where storage mounts
+#                inside the container, if requested
+#   public       (optional, default false) — true only takes effect
+#                for a production application; otherwise gated
+#                (functional/features/app-hosting rule 2)
+#   subdomain    (optional, defaults to name)
+#   uid          (optional, defaults to app_default_uid)
+#
+# technical/ansible-conventions.md names a fifth capability, an
+# object-storage bucket — not implemented yet, since it depends on
+# garage, which doesn't exist yet. A declaration requesting one fails
+# the whole converge loudly (roles/app/tasks/application_assert.yml)
+# rather than silently doing nothing.
+atlas_apps: []
