@@ -1,0 +1,37 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ observability_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    observability_service_uid: "{{ ansible_facts.getent_passwd[observability_service_user][1] }}"
+
+- name: Render the observability systemd unit
+  ansible.builtin.template:
+    src: observability.service.j2
+    dest: /etc/systemd/system/observability.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: observability_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: observability_unit.changed
+
+- name: Enable and start the observability stack
+  ansible.builtin.systemd:
+    name: observability
+    enabled: true
+    state: started
+
+- name: Restart the observability stack if its configuration changed
+  ansible.builtin.systemd:
+    name: observability
+    state: restarted
+  when: >-
+    observability_compose.changed or observability_unit.changed or
+    observability_loki_configuration.changed

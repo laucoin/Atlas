@@ -1,0 +1,24 @@
+---
+observability_service_user: "{{ docker_service_user }}"
+
+# The metrics store, log store and collection agent share one stack
+# directory and one systemd unit — unlike the Zigbee bridge split, none
+# of these has an independent lifecycle worth protecting; they're
+# already coupled (the agent writes into the stores, restarting either
+# together is fine).
+observability_stack_dir: /srv/observability
+observability_network: observability-internal
+
+observability_victoriametrics_uid: 2050
+observability_victoriametrics_image: "victoriametrics/victoria-metrics:v1.150.0"
+observability_victoriametrics_port: 8428
+# "Metrics for a year" per functional/features/observability rule 6.
+observability_metrics_retention: 1y
+
+observability_loki_uid: 2051
+observability_loki_image: "grafana/loki:3.7.7"
+observability_loki_port: 3100
+# "Logs for a month" per functional/features/observability rule 6 — a
+# duration Loki's own retention_period expects in hours, not a day
+# suffix.
+observability_logs_retention: 744h

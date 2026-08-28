@@ -1,0 +1,6 @@
+---
+- name: Render the observability stack
+  ansible.builtin.import_tasks: stack.yml
+
+- name: Activate the observability service
+  ansible.builtin.import_tasks: service.yml

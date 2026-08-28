@@ -1,0 +1,41 @@
+auth_enabled: false
+
+server:
+  http_listen_port: {{ observability_loki_port }}
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  tsdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/index_cache
+    cache_ttl: 24h
+  filesystem:
+    directory: /loki/chunks
+
+# Nothing here ever needs more than one replica of anything — a single
+# node, in-memory ring is Loki's own documented shape for exactly this
+# case, not a corner cut for this deployment specifically.
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+
+limits_config:
+  retention_period: {{ observability_logs_retention }}
+
+compactor:
+  working_directory: /loki/retention
+  retention_enabled: true
+  retention_delete_delay: 2h
+  delete_request_store: filesystem

@@ -1,0 +1,48 @@
+---
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything bind-mounted
+# INTO a container has to be owned by ITS OWN mapped UID.
+- name: Compute each container's host-mapped UID
+  ansible.builtin.set_fact:
+    observability_victoriametrics_host_uid: "{{ docker_subuid_start + observability_victoriametrics_uid - 1 }}"
+    observability_loki_host_uid: "{{ docker_subuid_start + observability_loki_uid - 1 }}"
+
+- name: Ensure the observability stack directory exists
+  ansible.builtin.file:
+    path: "{{ observability_stack_dir }}"
+    state: directory
+    owner: "{{ observability_service_user }}"
+    group: "{{ observability_service_user }}"
+    mode: "0750"
+
+- name: Ensure each store's data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ observability_stack_dir }}/{{ item.dir }}/data"
+    state: directory
+    owner: "{{ item.uid }}"
+    group: "{{ item.uid }}"
+    mode: "0750"
+  loop:
+    - { dir: victoriametrics, uid: "{{ observability_victoriametrics_host_uid }}" }
+    - { dir: loki, uid: "{{ observability_loki_host_uid }}" }
+  loop_control:
+    label: "{{ item.dir }}"
+
+- name: Render Loki's configuration
+  ansible.builtin.template:
+    src: loki-config.yaml.j2
+    dest: "{{ observability_stack_dir }}/loki/loki-config.yaml"
+    owner: "{{ observability_loki_host_uid }}"
+    group: "{{ observability_loki_host_uid }}"
+    mode: "0640"
+  register: observability_loki_configuration
+
+- name: Render the observability Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ observability_stack_dir }}/compose.yml"
+    owner: "{{ observability_service_user }}"
+    group: "{{ observability_service_user }}"
+    mode: "0640"
+  register: observability_compose
