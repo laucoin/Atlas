@@ -25,3 +25,9 @@
 - name: Provision this application's database
   ansible.builtin.import_tasks: application_database.yml
   when: app.database | default(false)
+
+- name: Render this application's stack
+  ansible.builtin.import_tasks: application_stack.yml
+
+- name: Activate this application
+  ansible.builtin.import_tasks: application_service.yml

@@ -1,0 +1,9 @@
+---
+- name: Render this application's Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ app_stack_dir }}/{{ app.name }}/compose.yml"
+    owner: "{{ app_service_user }}"
+    group: "{{ app_service_user }}"
+    mode: "0640"
+  register: app_compose
