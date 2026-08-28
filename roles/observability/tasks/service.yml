@@ -40,4 +40,7 @@
     observability_grafana_dashboard_provisioning.changed or
     observability_grafana_dashboards.changed or
     observability_victoriametrics_scrape_config.changed or
-    observability_blackbox_configuration.changed
+    observability_blackbox_configuration.changed or
+    observability_grafana_contactpoints.changed or
+    observability_grafana_notification_policies.changed or
+    observability_grafana_alert_rules.changed
