@@ -19,6 +19,11 @@ app_postgres_uid_range_start: 2100
 # one application's data from another's.
 app_default_uid: 1000
 
+# The most common convention among the maintainer's own likely stacks —
+# override per application with its own `port:` field if its image
+# listens somewhere else.
+app_default_port: 8080
+
 # No applications declared yet. Each entry:
 #   name         (required) — also the default subdomain and the
 #                container name prefix
@@ -38,6 +43,11 @@ app_default_uid: 1000
 #                (functional/features/app-hosting rule 2)
 #   subdomain    (optional, defaults to name)
 #   uid          (optional, defaults to app_default_uid)
+#   port         (optional, defaults to app_default_port) — what the
+#                container listens on internally; traefik's backend
+#                target, not a published host port
+#   description  (optional) — shown on the generated dashboard
+#                (unified-theme rule 5); defaults to "Hosted application"
 #
 # technical/ansible-conventions.md names a fifth capability, an
 # object-storage bucket — not implemented yet, since it depends on

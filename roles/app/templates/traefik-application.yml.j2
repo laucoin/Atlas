@@ -1,0 +1,25 @@
+http:
+  routers:
+    "app-{{ app.name }}":
+      rule: "Host(`{{ app_subdomain }}.atlas.{{ atlas_domain }}`)"
+      entrypoints:
+        - websecure
+      service: "app-{{ app.name }}"
+      tls:
+        certResolver: atlas
+{% if app_gated %}
+      # Gated: either a staging application (always gated, regardless
+      # of `public`) or a production application that isn't declared
+      # public. functional/features/app-hosting rule 5.
+      middlewares:
+        - atlas-gate@file
+{% else %}
+      # Public production application — functional/features/app-hosting
+      # rule 2: "If true and production, no gate."
+{% endif %}
+
+  services:
+    "app-{{ app.name }}":
+      loadBalancer:
+        servers:
+          - url: "http://app-{{ app.name }}:{{ app.port | default(app_default_port) }}"

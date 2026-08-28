@@ -1,0 +1,11 @@
+---
+# Bind-mounted into the traefik container (./dynamic:/dynamic:ro), so it
+# needs traefik's own rootless-remapped UID — traefik_host_uid, not
+# app_service_user.
+- name: Wire this application's route into traefik
+  ansible.builtin.template:
+    src: traefik-application.yml.j2
+    dest: "{{ traefik_stack_dir }}/dynamic/app-{{ app.name }}.yml"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
+    mode: "0640"
