@@ -1,0 +1,16 @@
+modules:
+  # Unauthenticated requests to a gated route must be redirected to the
+  # portal — the redirect itself is success, proving the proxy and the
+  # gate are both responding, with no credentials held here to prove it
+  # any other way.
+  http_gate_up:
+    prober: http
+    http:
+      follow_redirects: false
+      valid_status_codes: [302]
+
+  # The three named exceptions to the gate answer directly.
+  http_2xx:
+    prober: http
+    http:
+      follow_redirects: true

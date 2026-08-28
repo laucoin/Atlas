@@ -1,0 +1,41 @@
+# The standard Prometheus blackbox_exporter multi-target relabeling
+# pattern: the real target URL travels as a query param to blackbox's
+# own /probe endpoint, which does the actual connecting — everything
+# below is boilerplate to make that work per module, not specific
+# tuning. VictoriaMetrics' -promscrape.config is Prometheus scrape_config
+# compatible, so this is unchanged from how it'd be written for
+# Prometheus itself.
+scrape_configs:
+  - job_name: blackbox_http_gate_up
+    metrics_path: /probe
+    params:
+      module: [http_gate_up]
+    static_configs:
+      - targets:
+{% for target in observability_probe_targets if target.module == 'http_gate_up' %}
+          - "{{ target.url }}"
+{% endfor %}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "blackbox-exporter:{{ observability_blackbox_port }}"
+
+  - job_name: blackbox_http_2xx
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+{% for target in observability_probe_targets if target.module == 'http_2xx' %}
+          - "{{ target.url }}"
+{% endfor %}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "blackbox-exporter:{{ observability_blackbox_port }}"
