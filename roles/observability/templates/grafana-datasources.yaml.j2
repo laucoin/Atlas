@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: VictoriaMetrics
+    type: prometheus
+    url: "http://victoriametrics:{{ observability_victoriametrics_port }}"
+    access: proxy
+    isDefault: true
+  - name: Loki
+    type: loki
+    url: "http://loki:{{ observability_loki_port }}"
+    access: proxy

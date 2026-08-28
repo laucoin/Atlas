@@ -51,3 +51,6 @@ atlas_services:
   - name: Home Assistant
     subdomain: homeassistant
     description: Home automation and energy monitoring
+  - name: Grafana
+    subdomain: grafana
+    description: Metrics, logs and alerts

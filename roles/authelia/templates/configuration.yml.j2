@@ -81,6 +81,13 @@ notifier:
 access_control:
   default_policy: deny
   rules:
+    # grafana: admin only, per functional/features/observability's own
+    # permission table — stricter than sonarqube's, no collaborator
+    # access at all. Must precede the wildcard rule below.
+    - domain: "grafana.{{ authelia_session_domain }}"
+      policy: two_factor
+      subject:
+        - "group:admin"
     # sonarqube: admin and collaborator only, per functional/roles-and-
     # permissions (household has no access to code quality at all).
     # Must precede the wildcard rule below — Authelia evaluates rules

@@ -4,3 +4,6 @@
 
 - name: Activate the observability service
   ansible.builtin.import_tasks: service.yml
+
+- name: Integrate observability with traefik
+  ansible.builtin.import_tasks: traefik.yml
