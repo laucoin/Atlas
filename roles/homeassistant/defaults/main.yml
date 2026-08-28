@@ -10,21 +10,15 @@ homeassistant_bridge_stack_dir: /srv/homeassistant-bridge
 homeassistant_bridge_network: homeassistant-internal
 
 homeassistant_mosquitto_uid: 2040
-homeassistant_mosquitto_image: "eclipse-mosquitto:2.1.2"
 homeassistant_mosquitto_port: 1883
 
 homeassistant_zigbee2mqtt_uid: 2041
-homeassistant_zigbee2mqtt_image: "ghcr.io/koenkk/zigbee2mqtt:2.13.0"
 
 homeassistant_stack_dir: /srv/homeassistant
 homeassistant_uid: 2042
-# Pinned below the 2026.8 release, which moved the http integration's
-# trusted_proxies/use_x_forwarded_for from configuration.yaml to a
-# UI-only config entry with no documented non-interactive equivalent —
-# breaking exactly the reverse-proxy trust this deployment depends on
-# for rate limiting and failure banning to see real client IPs instead
-# of traefik's. Revisit this pin once that has a declarative answer.
-homeassistant_image: "ghcr.io/home-assistant/home-assistant:2026.7.4"
+# homeassistant_mosquitto_image, homeassistant_zigbee2mqtt_image and
+# homeassistant_image (including the reasoning for its specific pinned
+# version) all live in inventory/group_vars/all/images.yml.
 homeassistant_http_port: 8123
 
 # Pinned to a reviewed version, per functional/features/home-automation's

@@ -1,0 +1,47 @@
+---
+# Every container image this repository pins, in one place — per
+# technical/ansible-conventions.md: "the single file dependency updates
+# touch." A version bump is a one-line change here, not a hunt through
+# each role's own defaults.
+#
+# Each image is pinned to a specific, verified release — never :latest
+# — consistent with the reasoning already recorded in git history for
+# each one at the point it was first declared.
+
+# traefik
+traefik_image: "traefik:v3.7"
+
+# authelia
+authelia_postgres_image: "postgres:17-alpine"
+authelia_redis_image: "redis:7-alpine"
+authelia_image: "authelia/authelia:4.39"
+
+# theme
+theme_error_pages_image: "nginx:alpine"
+theme_dashboard_image: "nginx:alpine"
+
+# forgejo
+forgejo_postgres_image: "postgres:17-alpine"
+forgejo_image: "codeberg.org/forgejo/forgejo:9"
+
+# sonarqube
+sonarqube_postgres_image: "postgres:17-alpine"
+sonarqube_image: "sonarqube:community"
+
+# homeassistant
+homeassistant_mosquitto_image: "eclipse-mosquitto:2.1.2"
+homeassistant_zigbee2mqtt_image: "ghcr.io/koenkk/zigbee2mqtt:2.13.0"
+# Pinned below the 2026.8 release, which moved the http integration's
+# trusted_proxies/use_x_forwarded_for from configuration.yaml to a
+# UI-only config entry with no documented non-interactive equivalent —
+# breaking exactly the reverse-proxy trust this deployment depends on
+# for rate limiting and failure banning to see real client IPs instead
+# of traefik's. Revisit this pin once that has a declarative answer.
+homeassistant_image: "ghcr.io/home-assistant/home-assistant:2026.7.4"
+
+# observability
+observability_victoriametrics_image: "victoriametrics/victoria-metrics:v1.150.0"
+observability_loki_image: "grafana/loki:3.7.7"
+observability_alloy_image: "grafana/alloy:v1.19.2"
+observability_grafana_image: "grafana/grafana:13.2.0"
+observability_blackbox_image: "quay.io/prometheus/blackbox-exporter:v0.28.0"

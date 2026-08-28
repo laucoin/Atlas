@@ -29,15 +29,15 @@ atlas_palette:
     warning: "#FF9F0A"
     error: "#FF453A"
 
+# theme_error_pages_image and theme_dashboard_image live in
+# inventory/group_vars/all/images.yml.
 theme_error_pages_stack_dir: /srv/theme/error-pages
 theme_error_pages_uid: 2010
-theme_error_pages_image: "nginx:alpine"
 theme_error_pages_port: 8080
 theme_error_pages_container: atlas-error-pages
 
 theme_dashboard_stack_dir: /srv/theme/dashboard
 theme_dashboard_uid: 2011
-theme_dashboard_image: "nginx:alpine"
 theme_dashboard_port: 8080
 theme_dashboard_container: atlas-dashboard
 

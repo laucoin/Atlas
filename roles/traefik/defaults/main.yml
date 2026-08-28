@@ -3,7 +3,9 @@ traefik_service_user: "{{ docker_service_user }}"
 traefik_stack_dir: /srv/traefik
 traefik_uid: 2000
 
-traefik_image: "traefik:v3.7"
+# traefik_image lives in inventory/group_vars/all/images.yml, along
+# with every other role's own pinned image — see that file's own
+# comment for why.
 traefik_http_port: 8080
 traefik_https_port: 8443
 

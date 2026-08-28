@@ -9,28 +9,26 @@ observability_service_user: "{{ docker_service_user }}"
 observability_stack_dir: /srv/observability
 observability_network: observability-internal
 
+# observability_victoriametrics_image, observability_loki_image,
+# observability_alloy_image, observability_grafana_image and
+# observability_blackbox_image all live in
+# inventory/group_vars/all/images.yml.
 observability_victoriametrics_uid: 2050
-observability_victoriametrics_image: "victoriametrics/victoria-metrics:v1.150.0"
 observability_victoriametrics_port: 8428
 # "Metrics for a year" per functional/features/observability rule 6.
 observability_metrics_retention: 1y
 
 observability_loki_uid: 2051
-observability_loki_image: "grafana/loki:3.7.7"
 observability_loki_port: 3100
 # "Logs for a month" per functional/features/observability rule 6 — a
 # duration Loki's own retention_period expects in hours, not a day
 # suffix.
 observability_logs_retention: 744h
 
-observability_alloy_image: "grafana/alloy:v1.19.2"
-
 observability_grafana_uid: 2052
-observability_grafana_image: "grafana/grafana:13.2.0"
 observability_grafana_http_port: 3000
 
 observability_blackbox_uid: 2053
-observability_blackbox_image: "quay.io/prometheus/blackbox-exporter:v0.28.0"
 observability_blackbox_port: 9115
 
 # "Endpoint checks traverse the full path — proxy, gate and
