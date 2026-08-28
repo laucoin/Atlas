@@ -3,8 +3,8 @@ apiVersion: 1
 # Only the five immediate-tier conditions functional/features/
 # observability rule 3 names that this repository can actually detect
 # today. A failed backup is deliberately absent — nothing produces
-# that signal yet, since backup itself is on hold behind garage/the
-# peer (Phase 5). Add it here once that lands, rather than alerting on
+# that signal yet, since backup itself is a later Phase 5 concern that
+# hasn't landed. Add it here once that lands, rather than alerting on
 # a metric that doesn't exist.
 groups:
   - name: atlas-immediate
