@@ -234,7 +234,23 @@ Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHAN
 
 #### 🗝️ 5. Create every secret
 
-Each command below opens an editor on a new encrypted file; write plain YAML, save, and SOPS encrypts it in place using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
+None of these files exist yet — `sops <path>` creates one the first time you run it. It opens `$EDITOR` (falls back to `vi`) on a scratch plaintext buffer; write plain YAML with the keys from the table below, save and quit, and SOPS encrypts it in place on disk using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
+
+```bash
+sops inventory/group_vars/all/traefik.sops.yaml
+sops inventory/group_vars/all/authelia.sops.yaml
+sops inventory/group_vars/all/forgejo.sops.yaml
+sops inventory/group_vars/all/sonarqube.sops.yaml
+sops inventory/group_vars/all/observability.sops.yaml
+```
+
+For example, the first one's plaintext buffer is just:
+
+```yaml
+ovh_application_key: <value>
+ovh_application_secret: <value>
+ovh_consumer_key: <value>
+```
 
 | File | Keys |
 | ---- | ---- |
