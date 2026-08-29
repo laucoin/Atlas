@@ -1,0 +1,13 @@
+---
+# Both accounts get the shell environment: the admin (interactive sessions)
+# and root (elevated sessions), per functional/features/shell-environment
+# rule 6. Home paths are known and fixed — base creates the admin account
+# with Debian's default /home/<user>, and root's home never moves.
+shell_targets:
+  - user: "{{ atlas_admin_user }}"
+    home: "/home/{{ atlas_admin_user }}"
+  - user: root
+    home: /root
+
+shell_starship_version: "1.26.0"
+shell_starship_checksum: "sha256:b7c232b0e8249d8e55a40beb79c5c43a7d370f3f9408bd215deb0170daeaadf3"
