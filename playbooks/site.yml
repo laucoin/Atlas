@@ -25,3 +25,5 @@
       tags: [sonarqube]
     - role: homeassistant
       tags: [homeassistant]
+    - role: observability
+      tags: [observability]

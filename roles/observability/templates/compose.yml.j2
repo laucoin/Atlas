@@ -1,0 +1,58 @@
+networks:
+  observability-internal:
+    name: "{{ observability_network }}"
+    driver: bridge
+
+services:
+  victoriametrics:
+    image: {{ observability_victoriametrics_image }}
+    container_name: victoriametrics
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ observability_victoriametrics_uid }}:{{ observability_victoriametrics_uid }}"
+    tmpfs:
+      - /tmp
+    command:
+      - "--storageDataPath=/storage"
+      - "--retentionPeriod={{ observability_metrics_retention }}"
+      - "--httpListenAddr=:{{ observability_victoriametrics_port }}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:{{ observability_victoriametrics_port }}/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - ./victoriametrics/data:/storage
+    networks:
+      - observability-internal
+
+  loki:
+    image: {{ observability_loki_image }}
+    container_name: loki
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ observability_loki_uid }}:{{ observability_loki_uid }}"
+    tmpfs:
+      - /tmp
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:{{ observability_loki_port }}/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - ./loki/data:/loki
+    networks:
+      - observability-internal
