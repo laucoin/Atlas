@@ -1,0 +1,11 @@
+---
+traefik_service_user: "{{ docker_service_user }}"
+traefik_stack_dir: /srv/traefik
+traefik_uid: 2000
+
+traefik_image: "traefik:v3.7"
+traefik_http_port: 8080
+traefik_https_port: 8443
+
+atlas_domain: laucoin.fr
+atlas_acme_email: luc.aucoin1998@gmail.com
