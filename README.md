@@ -4,6 +4,28 @@
 
 **Atlas** turns a single machine into a small, opinionated, self-hosted home cloud.
 
+### Built with
+
+![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?logo=ansible&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![SOPS](https://img.shields.io/badge/SOPS-2C2C2C)
+![age](https://img.shields.io/badge/age-2C2C2C)
+![Traefik](https://img.shields.io/badge/Traefik-24A1C1?logo=traefikproxy&logoColor=white)
+![Authelia](https://img.shields.io/badge/Authelia-FB923C?logo=authelia&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white)
+![Forgejo](https://img.shields.io/badge/Forgejo-FB923C?logo=forgejo&logoColor=white)
+![SonarQube](https://img.shields.io/badge/SonarQube-4E9BCD?logo=sonarqube&logoColor=white)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-41BDF5?logo=homeassistant&logoColor=white)
+![Zigbee2MQTT](https://img.shields.io/badge/Zigbee2MQTT-E64A19?logo=zigbee2mqtt&logoColor=white)
+![Eclipse Mosquitto](https://img.shields.io/badge/Mosquitto-3C5280?logo=eclipsemosquitto&logoColor=white)
+![VictoriaMetrics](https://img.shields.io/badge/VictoriaMetrics-621773?logo=victoriametrics&logoColor=white)
+![Grafana Loki](https://img.shields.io/badge/Loki-F46800?logo=grafana&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Blackbox%20Exporter-E6522C?logo=prometheus&logoColor=white)
+
 ## This repository 📖
 
 Atlas is a **single Debian node, described entirely in code**: one Ansible repository, no orchestrator. Full specification lives at [doc.laucoin.fr/atlas](https://doc.laucoin.fr/atlas); this repository holds only the implementation, built one role at a time against the [phased plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
