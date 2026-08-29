@@ -4,3 +4,6 @@
 
 - name: Deploy the zsh configuration
   ansible.builtin.import_tasks: configure.yml
+
+- name: Deploy the Starship prompt configuration
+  ansible.builtin.import_tasks: starship.yml
