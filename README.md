@@ -107,7 +107,7 @@ Phase 3 / Services is nearly complete: `forgejo`, `sonarqube`, `homeassistant` a
 
 | Requirement | Notes |
 | ----------- | ----- |
-| A fresh **Debian stable** install, partitioned with **LVM** | SSH reachable; the guided partitioner's "use LVM" option creates the volume group the `storage` role expects (`vg_atlas` by default, see `roles/storage/defaults/main.yml`) — see [Local setup](#local-setup) below |
+| A fresh **Debian stable** install, **manually partitioned with LVM** | SSH reachable; needs a volume group named `vg_atlas` by default (see `roles/storage/defaults/main.yml`) holding separate `root`/`var`/`docker` logical volumes plus swap, with free space left unallocated — see [Local setup](#local-setup) below |
 | **Ansible** on the workstation | Runs the converge; nothing is installed on the host beyond what a role declares |
 | **age** on the workstation | Generates and holds the key that decrypts secrets during a converge; the key never reaches the host |
 | **sops** on the workstation | Encrypts/edits per-value secrets in `inventory/**/*.sops.yaml`; decryption during a converge goes through the `community.sops` collection instead |
@@ -165,7 +165,28 @@ flowchart LR
 
 #### 💽 1. Install Debian on the host
 
-Install Debian stable normally, with one deliberate choice in the guided partitioner: pick **"Guided — use entire disk and set up LVM"**, and leave the volume group at its default name (or note whatever name you give it — it must match `storage_volume_group` in `roles/storage/defaults/main.yml`, `vg_atlas` by default). Enable the SSH server task during install. Nothing else is Atlas-specific yet; every package beyond a minimal base is the `base` role's job.
+Install Debian stable normally, with one deliberate choice in the partitioner.
+
+> [!WARNING]
+> The plain **"Guided — use entire disk and set up LVM"** option only gives you a single root logical volume (or, at best, a separate `/var`) — it can't carve out `/var/lib/docker` as its own mount point. Use **"Manual"** partitioning instead, and build the LVM layout below by hand. It's the same partman screens, just with a few extra steps.
+
+In the manual partitioner:
+
+1. Select the disk, create a partition table if asked, and set up the whole disk (or everything but a small `/boot` partition, if your setup needs one) as a single **physical volume for LVM**.
+2. Configure the **LVM** entry: create a volume group named **`vg_atlas`** on that physical volume (must match `storage_volume_group` in `roles/storage/defaults/main.yml` if you rename it).
+3. Inside `vg_atlas`, create exactly these four logical volumes — **ext4** for the three filesystems, **swap area** for the last one — and mount them as shown:
+
+   | Logical volume | Size | Filesystem | Mount point |
+   | --------------- | ---- | ---------- | ----------- |
+   | `lv_root` | 20 GB | ext4 | `/` |
+   | `lv_var` | 15 GB | ext4 | `/var` |
+   | `lv_docker` | 60 GB | ext4 | `/var/lib/docker` |
+   | `lv_swap` | 4 GB | swap area | — |
+
+4. **Don't allocate the rest of the disk.** Leave the remaining space as free extents in `vg_atlas` — `playbooks/storage.yml` creates and grows every other declared volume (`/var/log`, `/srv`, `/srv/registry`, currently 620 GB combined — see `roles/storage/defaults/main.yml` for the exact figures) out of that free space later. Allocating it all now leaves nothing for that step to work with.
+5. Finish the partitioning (write changes, "Finish partitioning and write changes to disk"), leave mount options at their installer defaults (`defaults` — nothing custom needed on any of the four), and continue the install normally. Enable the SSH server task when offered.
+
+Nothing else is Atlas-specific yet; every package beyond a minimal base is the `base` role's job.
 
 > [!TIP]
 > Confirm you can reach it before moving on: `ssh root@<its address>`.
