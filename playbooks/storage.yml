@@ -21,3 +21,8 @@
       ansible.builtin.import_role:
         name: storage
         tasks_from: carve_out_logs
+
+    - name: Move application data from /var/data to /srv
+      ansible.builtin.import_role:
+        name: storage
+        tasks_from: remount_application_data
