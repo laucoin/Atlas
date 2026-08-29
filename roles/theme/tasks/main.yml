@@ -23,3 +23,6 @@
 
 - name: Host the dashboard and wire its route
   ansible.builtin.import_tasks: dashboard_hosting.yml
+
+- name: Activate the static-content stacks
+  ansible.builtin.import_tasks: activate_static_stacks.yml

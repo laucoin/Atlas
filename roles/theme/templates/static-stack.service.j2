@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas stack: {{ stack_name }}
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ docker_service_user }}
+Group={{ docker_service_user }}
+WorkingDirectory={{ stack_dir }}
+Environment=DOCKER_HOST=unix:///run/user/{{ theme_service_uid }}/docker.sock
+ExecStart=/usr/bin/docker compose -f {{ stack_dir }}/compose.yml up
+ExecStop=/usr/bin/docker compose -f {{ stack_dir }}/compose.yml down
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
