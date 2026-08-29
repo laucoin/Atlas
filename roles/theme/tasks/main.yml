@@ -20,3 +20,6 @@
 
 - name: Render the dashboard
   ansible.builtin.import_tasks: dashboard.yml
+
+- name: Host the dashboard and wire its route
+  ansible.builtin.import_tasks: dashboard_hosting.yml

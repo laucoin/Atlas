@@ -1,0 +1,25 @@
+---
+- name: Render the dashboard nginx configuration
+  ansible.builtin.template:
+    src: dashboard-nginx.conf.j2
+    dest: "{{ theme_dashboard_stack_dir }}/nginx.conf"
+    owner: "{{ theme_dashboard_host_uid }}"
+    group: "{{ theme_dashboard_host_uid }}"
+    mode: "0644"
+
+- name: Render the dashboard Compose file
+  ansible.builtin.template:
+    src: dashboard-compose.yml.j2
+    dest: "{{ theme_dashboard_stack_dir }}/compose.yml"
+    owner: "{{ docker_service_user }}"
+    group: "{{ docker_service_user }}"
+    mode: "0640"
+  register: theme_dashboard_compose
+
+- name: Wire the dashboard's gated route into traefik
+  ansible.builtin.template:
+    src: traefik-dashboard.yml.j2
+    dest: "{{ traefik_stack_dir }}/dynamic/dashboard.yml"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
+    mode: "0640"

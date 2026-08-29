@@ -1,19 +1,33 @@
 ---
-- name: Ensure the dashboard stack directories exist
+# Rootless Docker maps this container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything actually
+# bind-mounted into the dashboard container needs this UID, not
+# docker_service_user.
+- name: Compute the dashboard container's host-mapped UID
+  ansible.builtin.set_fact:
+    theme_dashboard_host_uid: "{{ docker_subuid_start + theme_dashboard_uid - 1 }}"
+
+- name: Ensure the dashboard stack directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ theme_dashboard_stack_dir }}"
     state: directory
     owner: "{{ docker_service_user }}"
     group: "{{ docker_service_user }}"
     mode: "0750"
-  loop:
-    - "{{ theme_dashboard_stack_dir }}"
-    - "{{ theme_dashboard_stack_dir }}/html"
+
+- name: Ensure the html directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ theme_dashboard_stack_dir }}/html"
+    state: directory
+    owner: "{{ theme_dashboard_host_uid }}"
+    group: "{{ theme_dashboard_host_uid }}"
+    mode: "0750"
 
 - name: Render the dashboard
   ansible.builtin.template:
     src: dashboard.html.j2
     dest: "{{ theme_dashboard_stack_dir }}/html/index.html"
-    owner: "{{ docker_service_user }}"
-    group: "{{ docker_service_user }}"
+    owner: "{{ theme_dashboard_host_uid }}"
+    group: "{{ theme_dashboard_host_uid }}"
     mode: "0644"

@@ -36,6 +36,10 @@ theme_error_pages_port: 8080
 theme_error_pages_container: atlas-error-pages
 
 theme_dashboard_stack_dir: /srv/theme/dashboard
+theme_dashboard_uid: 2011
+theme_dashboard_image: "nginx:alpine"
+theme_dashboard_port: 8080
+theme_dashboard_container: atlas-dashboard
 
 # Declares every service that appears on the dashboard, per unified-theme
 # rule 5: "rendered from the same declarations that define the services."

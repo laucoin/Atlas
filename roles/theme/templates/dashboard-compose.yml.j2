@@ -1,0 +1,25 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+
+services:
+  dashboard:
+    image: {{ theme_dashboard_image }}
+    container_name: {{ theme_dashboard_container }}
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ theme_dashboard_uid }}:{{ theme_dashboard_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - proxy

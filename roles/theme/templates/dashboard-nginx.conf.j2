@@ -1,0 +1,11 @@
+events {}
+
+http {
+  server {
+    listen {{ theme_dashboard_port }};
+    location / {
+      root /usr/share/nginx/html;
+      try_files /index.html =404;
+    }
+  }
+}
