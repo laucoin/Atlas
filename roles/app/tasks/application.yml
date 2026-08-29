@@ -31,3 +31,6 @@
 
 - name: Activate this application
   ansible.builtin.import_tasks: application_service.yml
+
+- name: Integrate this application with traefik
+  ansible.builtin.import_tasks: application_traefik.yml

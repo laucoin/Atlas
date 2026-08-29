@@ -52,12 +52,18 @@
 </head>
 <body>
   <h1>Atlas</h1>
-{% if atlas_services %}
+{% if atlas_services or atlas_apps %}
   <div class="services">
 {% for service in atlas_services %}
     <a class="service" href="https://{{ service.subdomain }}.atlas.{{ atlas_domain }}">
       <h2>{{ service.name }}</h2>
       <p>{{ service.description }}</p>
+    </a>
+{% endfor %}
+{% for app in atlas_apps %}
+    <a class="service" href="https://{{ app.subdomain | default(app.name) }}.atlas.{{ atlas_domain }}">
+      <h2>{{ app.name }}</h2>
+      <p>{{ app.description | default('Hosted application') }}</p>
     </a>
 {% endfor %}
   </div>
