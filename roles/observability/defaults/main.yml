@@ -28,3 +28,36 @@ observability_alloy_image: "grafana/alloy:v1.19.2"
 observability_grafana_uid: 2052
 observability_grafana_image: "grafana/grafana:13.2.0"
 observability_grafana_http_port: 3000
+
+observability_blackbox_uid: 2053
+observability_blackbox_image: "quay.io/prometheus/blackbox-exporter:v0.28.0"
+observability_blackbox_port: 9115
+
+# "Endpoint checks traverse the full path — proxy, gate and
+# application" (rule 2). Each future gated/ungated route should add
+# itself here — same "declare once, the automation handles it"
+# convention as atlas_services and storage_volumes.
+#
+# http_gate_up: an unauthenticated request must be redirected to the
+# portal — proof the proxy AND the gate are both up, with no
+# credentials held here to do it. http_2xx: the three named exceptions
+# to the gate, which must answer directly instead.
+observability_probe_targets:
+  - name: authelia
+    url: "https://auth.atlas.{{ atlas_domain }}/"
+    module: http_2xx
+  - name: dashboard
+    url: "https://atlas.{{ atlas_domain }}/"
+    module: http_gate_up
+  - name: sonarqube
+    url: "https://sonarqube.atlas.{{ atlas_domain }}/"
+    module: http_gate_up
+  - name: grafana
+    url: "https://grafana.atlas.{{ atlas_domain }}/"
+    module: http_gate_up
+  - name: forgejo
+    url: "https://forgejo.atlas.{{ atlas_domain }}/"
+    module: http_2xx
+  - name: homeassistant
+    url: "https://homeassistant.atlas.{{ atlas_domain }}/"
+    module: http_2xx

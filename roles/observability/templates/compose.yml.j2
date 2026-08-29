@@ -23,6 +23,7 @@ services:
       - "--storageDataPath=/storage"
       - "--retentionPeriod={{ observability_metrics_retention }}"
       - "--httpListenAddr=:{{ observability_victoriametrics_port }}"
+      - "--promscrape.config=/etc/victoriametrics/scrape.yml"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:{{ observability_victoriametrics_port }}/health"]
       interval: 10s
@@ -31,6 +32,7 @@ services:
       start_period: 15s
     volumes:
       - ./victoriametrics/data:/storage
+      - ./victoriametrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro
     networks:
       - observability-internal
 
@@ -122,6 +124,37 @@ services:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    networks:
+      - proxy
+      - observability-internal
+
+  blackbox-exporter:
+    image: {{ observability_blackbox_image }}
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ observability_blackbox_uid }}:{{ observability_blackbox_uid }}"
+    tmpfs:
+      - /tmp
+    command:
+      - "--config.file=/etc/blackbox/blackbox.yml"
+    # Resolves each monitored public hostname straight to traefik's own
+    # fixed address on the proxy network, instead of real DNS/NAT —
+    # proves the proxy+gate path from inside the host without a real
+    # round trip through the internet. The Host header and TLS SNI
+    # blackbox sends are still the real hostname (both come from the
+    # probed URL itself), so this validates the exact same routing
+    # traefik would apply to a genuine external request.
+    extra_hosts:
+{% for target in observability_probe_targets %}
+      - "{{ target.url | regex_replace('^https?://([^/]+).*$', '\\1') }}:{{ atlas_proxy_traefik_ip }}"
+{% endfor %}
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
     networks:
       - proxy
       - observability-internal

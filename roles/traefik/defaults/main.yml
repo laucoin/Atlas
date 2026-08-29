@@ -17,3 +17,9 @@ atlas_acme_email: luc.aucoin1998@gmail.com
 # Chosen outside Docker's default address-pool ranges to avoid colliding
 # with another auto-assigned bridge network.
 atlas_proxy_network_cidr: 172.28.0.0/24
+# A fixed address for traefik itself within that subnet, so anything
+# that needs to reach it directly by IP rather than by container name —
+# observability's blackbox_exporter, which probes real public hostnames
+# and needs them to resolve to traefik without going out through real
+# DNS/NAT — has a stable value to pin an /etc/hosts-style override to.
+atlas_proxy_traefik_ip: 172.28.0.2

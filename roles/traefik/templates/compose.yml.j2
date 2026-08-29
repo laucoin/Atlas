@@ -54,4 +54,5 @@ services:
       - "--entrypoints.websecure.http.tls.domains[0].sans=*.atlas.{{ atlas_domain }}"
       - "--entrypoints.websecure.http.middlewares=atlas-errors@file"
     networks:
-      - proxy
+      proxy:
+        ipv4_address: "{{ atlas_proxy_traefik_ip }}"
