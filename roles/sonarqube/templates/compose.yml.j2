@@ -1,0 +1,75 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+  internal:
+    driver: bridge
+
+services:
+  postgres:
+    image: {{ sonarqube_postgres_image }}
+    container_name: sonarqube-postgres
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ sonarqube_postgres_uid }}:{{ sonarqube_postgres_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    environment:
+      POSTGRES_DB: sonar
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: "{{ sonarqube_postgres_password }}"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  sonarqube:
+    image: {{ sonarqube_image }}
+    container_name: sonarqube
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ sonarqube_uid }}:{{ sonarqube_uid }}"
+    # The embedded Elasticsearch bootstrap check requires more open file
+    # descriptors and processes than Docker's own defaults allow —
+    # documented on the image's own Docker Hub page.
+    ulimits:
+      nofile:
+        soft: 131072
+        hard: 131072
+      nproc:
+        soft: 8192
+        hard: 8192
+    tmpfs:
+      - /tmp:size=256M,mode=1777
+    environment:
+      SONAR_JDBC_URL: "jdbc:postgresql://postgres:5432/sonar"
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: "{{ sonarqube_postgres_password }}"
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:{{ sonarqube_http_port }}:{{ sonarqube_http_port }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ sonarqube_http_port }}/api/system/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    volumes:
+      - ./config/sonar.properties:/opt/sonarqube/conf/sonar.properties:ro
+      - ./data:/opt/sonarqube/data
+      - ./extensions:/opt/sonarqube/extensions
+      - ./logs:/opt/sonarqube/logs
+      - ./temp:/opt/sonarqube/temp
+    networks:
+      - proxy
+      - internal

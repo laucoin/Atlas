@@ -1,0 +1,61 @@
+---
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything bind-mounted
+# INTO a container has to be owned by ITS OWN mapped UID.
+- name: Compute each container's host-mapped UID
+  ansible.builtin.set_fact:
+    sonarqube_postgres_host_uid: "{{ docker_subuid_start + sonarqube_postgres_uid - 1 }}"
+    sonarqube_host_uid: "{{ docker_subuid_start + sonarqube_uid - 1 }}"
+
+- name: Ensure the sonarqube stack directory exists
+  ansible.builtin.file:
+    path: "{{ sonarqube_stack_dir }}"
+    state: directory
+    owner: "{{ sonarqube_service_user }}"
+    group: "{{ sonarqube_service_user }}"
+    mode: "0750"
+
+- name: Ensure the postgres data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ sonarqube_stack_dir }}/data/postgres"
+    state: directory
+    owner: "{{ sonarqube_postgres_host_uid }}"
+    group: "{{ sonarqube_postgres_host_uid }}"
+    mode: "0750"
+
+# Bind-mounted into the sonarqube container (data/extensions/logs/temp,
+# per the official image's own required paths) — needs the container's
+# own mapped UID, same reasoning as postgres above.
+- name: Ensure the sonarqube data directories exist, owned for the container
+  ansible.builtin.file:
+    path: "{{ sonarqube_stack_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ sonarqube_host_uid }}"
+    group: "{{ sonarqube_host_uid }}"
+    mode: "0750"
+  loop:
+    - data
+    - extensions
+    - logs
+    - temp
+
+# Just a host-side staging directory — docker bind-mounts the individual
+# file inside it, never the directory itself. sonar.properties gets the
+# container's mapped UID at the point it's rendered (Step 2).
+- name: Ensure the config directory exists
+  ansible.builtin.file:
+    path: "{{ sonarqube_stack_dir }}/config"
+    state: directory
+    owner: "{{ sonarqube_service_user }}"
+    group: "{{ sonarqube_service_user }}"
+    mode: "0750"
+
+- name: Render the sonarqube Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ sonarqube_stack_dir }}/compose.yml"
+    owner: "{{ sonarqube_service_user }}"
+    group: "{{ sonarqube_service_user }}"
+    mode: "0640"
+  register: sonarqube_compose

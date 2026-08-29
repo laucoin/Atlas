@@ -37,6 +37,9 @@ hardening_sysctl_settings:
   net.ipv4.conf.default.accept_redirects: 0
   net.ipv4.conf.all.send_redirects: 0
   net.ipv4.conf.all.accept_source_route: 0
+  # Required by sonarqube's embedded Elasticsearch — its bootstrap check
+  # refuses to start below this, regardless of container-level limits.
+  vm.max_map_count: 524288
   net.ipv6.conf.all.accept_redirects: 0
   net.ipv6.conf.all.accept_source_route: 0
   kernel.randomize_va_space: 2
