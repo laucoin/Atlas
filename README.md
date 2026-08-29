@@ -172,9 +172,10 @@ Install Debian stable normally, with one deliberate choice in the partitioner.
 
 In the manual partitioner:
 
-1. Select the disk, create a partition table if asked, and set up the whole disk (or everything but a small `/boot` partition, if your setup needs one) as a single **physical volume for LVM**.
-2. Configure the **LVM** entry: create a volume group named **`vg_atlas`** on that physical volume (must match `storage_volume_group` in `roles/storage/defaults/main.yml` if you rename it).
-3. Inside `vg_atlas`, create exactly these four logical volumes — **ext4** for the three filesystems, **swap area** for the last one — and mount them as shown:
+1. On **UEFI hardware** (most machines built in the last decade — check your boot firmware if unsure), first create a small dedicated partition **outside LVM**: ~512 MB, "Use as: EFI System Partition", no mount point needed (partman handles it). Skip this on legacy BIOS boot — there's nothing to create.
+2. Use the rest of the disk (everything but that EFI partition) as a single **physical volume for LVM**.
+3. Configure the **LVM** entry: create a volume group named **`vg_atlas`** on that physical volume (must match `storage_volume_group` in `roles/storage/defaults/main.yml` if you rename it).
+4. Inside `vg_atlas`, create exactly these four logical volumes — **ext4** for the three filesystems, **swap area** for the last one — and mount them as shown:
 
    | Logical volume | Size | Filesystem | Mount point |
    | --------------- | ---- | ---------- | ----------- |
@@ -183,8 +184,8 @@ In the manual partitioner:
    | `lv_docker` | 60 GB | ext4 | `/var/lib/docker` |
    | `lv_swap` | 4 GB | swap area | — |
 
-4. **Don't allocate the rest of the disk.** Leave the remaining space as free extents in `vg_atlas` — `playbooks/storage.yml` creates and grows every other declared volume (`/var/log`, `/srv`, `/srv/registry`, currently 620 GB combined — see `roles/storage/defaults/main.yml` for the exact figures) out of that free space later. Allocating it all now leaves nothing for that step to work with.
-5. Finish the partitioning (write changes, "Finish partitioning and write changes to disk"), leave mount options at their installer defaults (`defaults` — nothing custom needed on any of the four), and continue the install normally. Enable the SSH server task when offered.
+5. **Don't allocate the rest of the disk.** Leave the remaining space as free extents in `vg_atlas` — `playbooks/storage.yml` creates and grows every other declared volume (`/var/log`, `/srv`, `/srv/registry`, currently 620 GB combined — see `roles/storage/defaults/main.yml` for the exact figures) out of that free space later. Allocating it all now leaves nothing for that step to work with.
+6. Finish the partitioning (write changes, "Finish partitioning and write changes to disk"), leave mount options at their installer defaults (`defaults` — nothing custom needed on any of the four), and continue the install normally. Enable the SSH server task when offered.
 
 Nothing else is Atlas-specific yet; every package beyond a minimal base is the `base` role's job.
 
