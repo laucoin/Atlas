@@ -1,0 +1,6 @@
+---
+# Git-over-SSH, on its own port so it never competes with the admin
+# account's own SSH access (hardening_ssh_port). Enabled but unused per
+# functional/features/registry rule 7 — no code is expected there yet,
+# it just needs to work without reconfiguration when it is.
+forgejo_ssh_port: 2222
