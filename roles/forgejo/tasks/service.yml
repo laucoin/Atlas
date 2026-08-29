@@ -1,0 +1,37 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ forgejo_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    forgejo_service_uid: "{{ ansible_facts.getent_passwd[forgejo_service_user][1] }}"
+
+- name: Render the forgejo systemd unit
+  ansible.builtin.template:
+    src: forgejo.service.j2
+    dest: /etc/systemd/system/forgejo.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: forgejo_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: forgejo_unit.changed
+
+- name: Enable and start the forgejo stack
+  ansible.builtin.systemd:
+    name: forgejo
+    enabled: true
+    state: started
+
+- name: Restart the forgejo stack if its configuration changed
+  ansible.builtin.systemd:
+    name: forgejo
+    state: restarted
+  when: >-
+    forgejo_compose.changed or forgejo_configuration.changed or
+    forgejo_unit.changed

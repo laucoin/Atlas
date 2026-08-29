@@ -1,0 +1,12 @@
+---
+# Bind-mounted into the traefik container (./dynamic:/dynamic:ro), so it
+# needs traefik's own rootless-remapped UID — traefik_host_uid, computed
+# by roles/traefik/tasks/stack.yml and still set as a fact this late in
+# the play, not forgejo_service_user.
+- name: Wire forgejo's route into traefik
+  ansible.builtin.template:
+    src: traefik-forgejo.yml.j2
+    dest: "{{ traefik_stack_dir }}/dynamic/forgejo.yml"
+    owner: "{{ traefik_host_uid }}"
+    group: "{{ traefik_host_uid }}"
+    mode: "0640"
