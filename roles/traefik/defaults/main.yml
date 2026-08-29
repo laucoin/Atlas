@@ -9,3 +9,11 @@ traefik_https_port: 8443
 
 atlas_domain: laucoin.fr
 atlas_acme_email: luc.aucoin1998@gmail.com
+
+# A fixed subnet, not Docker's own auto-assigned one, so anything that
+# needs to trust "traffic from the proxy" by address (homeassistant's
+# own trusted_proxies, since it can't trust a hostname) has a stable
+# value to reference instead of an unpredictable per-deployment one.
+# Chosen outside Docker's default address-pool ranges to avoid colliding
+# with another auto-assigned bridge network.
+atlas_proxy_network_cidr: 172.28.0.0/24

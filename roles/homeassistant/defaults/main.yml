@@ -26,3 +26,10 @@ homeassistant_uid: 2042
 # of traefik's. Revisit this pin once that has a declarative answer.
 homeassistant_image: "ghcr.io/home-assistant/home-assistant:2026.7.4"
 homeassistant_http_port: 8123
+
+# Pinned to a reviewed version, per functional/features/home-automation's
+# own accepted risk on this being a community-maintained integration —
+# confirmed as the integration Authelia's own docs use as their Home
+# Assistant example, and as actively maintained via its release history.
+homeassistant_oidc_auth_version: v1.2.1
+homeassistant_oidc_client_id: homeassistant

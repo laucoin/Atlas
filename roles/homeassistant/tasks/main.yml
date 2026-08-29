@@ -8,5 +8,8 @@
 - name: Render the homeassistant stack
   ansible.builtin.import_tasks: stack.yml
 
+- name: Render the homeassistant configuration
+  ansible.builtin.import_tasks: configuration.yml
+
 - name: Activate the homeassistant service
   ansible.builtin.import_tasks: service.yml
