@@ -11,6 +11,6 @@ forgejo_registry_dir: /srv/registry
 
 forgejo_postgres_uid: 2020
 forgejo_uid: 2021
-forgejo_postgres_image: "postgres:17-alpine"
-forgejo_image: "codeberg.org/forgejo/forgejo:9"
+# forgejo_postgres_image and forgejo_image live in
+# inventory/group_vars/all/images.yml.
 forgejo_http_port: 3000
