@@ -1,0 +1,4 @@
+---
+docker_service_user: atlas-docker
+docker_subuid_start: 100000
+docker_subuid_count: 65536

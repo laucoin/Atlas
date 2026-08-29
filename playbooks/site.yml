@@ -9,3 +9,5 @@
       tags: [hardening]
     - role: storage
       tags: [storage]
+    - role: docker
+      tags: [docker]
