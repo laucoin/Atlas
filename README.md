@@ -234,17 +234,9 @@ Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHAN
 
 #### 🗝️ 5. Create every secret
 
-None of these files exist yet — `sops <path>` creates one the first time you run it. It opens `$EDITOR` (falls back to `vi`) on a scratch plaintext buffer; write plain YAML with the keys from the table below, save and quit, and SOPS encrypts it in place on disk using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
+None of these files exist yet — `sops <path>` creates one the first time you run it. It opens `$EDITOR` (falls back to `vi`) on a scratch plaintext buffer; write plain YAML with the keys shown below, save and quit, and SOPS encrypts it in place on disk using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
 
-```bash
-sops inventory/group_vars/all/traefik.sops.yaml
-sops inventory/group_vars/all/authelia.sops.yaml
-sops inventory/group_vars/all/forgejo.sops.yaml
-sops inventory/group_vars/all/sonarqube.sops.yaml
-sops inventory/group_vars/all/observability.sops.yaml
-```
-
-For example, the first one's plaintext buffer is just:
+**`sops inventory/group_vars/all/traefik.sops.yaml`** — DNS-01 credentials (swap for your own DNS provider's if not using OVH):
 
 ```yaml
 ovh_application_key: <value>
@@ -252,13 +244,43 @@ ovh_application_secret: <value>
 ovh_consumer_key: <value>
 ```
 
-| File | Keys |
-| ---- | ---- |
-| `inventory/group_vars/all/traefik.sops.yaml` | `ovh_application_key`, `ovh_application_secret`, `ovh_consumer_key` (DNS-01 credentials — swap for your own DNS provider's if not using OVH) |
-| `inventory/group_vars/all/authelia.sops.yaml` | `authelia_jwt_secret`, `authelia_session_secret`, `authelia_storage_encryption_key`, `authelia_postgres_password`, `authelia_redis_password`, `authelia_smtp_username`, `authelia_smtp_password`, `authelia_oidc_hmac_secret` (64+ random characters), `authelia_oidc_issuer_private_key` (a PEM-encoded RSA private key, 2048-bit minimum — needed for Home Assistant's OIDC sign-in) |
-| `inventory/group_vars/all/forgejo.sops.yaml` | `forgejo_postgres_password`, `forgejo_secret_key`, `forgejo_internal_token` |
-| `inventory/group_vars/all/sonarqube.sops.yaml` | `sonarqube_postgres_password` |
-| `inventory/group_vars/all/observability.sops.yaml` | `observability_grafana_admin_password`, `observability_ha_long_lived_token` (see step 8 — this one has to wait) |
+**`sops inventory/group_vars/all/authelia.sops.yaml`** — `authelia_oidc_hmac_secret` is 64+ random characters, `authelia_oidc_issuer_private_key` is a PEM-encoded RSA private key (2048-bit minimum, needed for Home Assistant's OIDC sign-in — generate one with `openssl genrsa 2048`):
+
+```yaml
+authelia_jwt_secret: <value>
+authelia_session_secret: <value>
+authelia_storage_encryption_key: <value>
+authelia_postgres_password: <value>
+authelia_redis_password: <value>
+authelia_smtp_username: <value>
+authelia_smtp_password: <value>
+authelia_oidc_hmac_secret: <value>
+authelia_oidc_issuer_private_key: |
+  -----BEGIN RSA PRIVATE KEY-----
+  <value>
+  -----END RSA PRIVATE KEY-----
+```
+
+**`sops inventory/group_vars/all/forgejo.sops.yaml`**:
+
+```yaml
+forgejo_postgres_password: <value>
+forgejo_secret_key: <value>
+forgejo_internal_token: <value>
+```
+
+**`sops inventory/group_vars/all/sonarqube.sops.yaml`**:
+
+```yaml
+sonarqube_postgres_password: <value>
+```
+
+**`sops inventory/group_vars/all/observability.sops.yaml`** — `observability_ha_long_lived_token` has to wait until step 8; leave it as any placeholder value for now and come back to this file (`sops` re-opens it decrypted for editing) once you have the real token:
+
+```yaml
+observability_grafana_admin_password: <value>
+observability_ha_long_lived_token: CHANGE_ME
+```
 
 > [!NOTE]
 > A declared `app` entry that requests a database holds its own `postgres_password` inline in its own `atlas_apps` list entry rather than a separate file — SOPS encrypts per value regardless of nesting.
