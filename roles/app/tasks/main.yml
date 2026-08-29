@@ -1,4 +1,16 @@
 ---
+# Looked up once, outside the loop — every application's own systemd
+# unit runs docker compose as this same user, so there's no reason to
+# repeat the lookup on every iteration.
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ app_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    app_service_uid: "{{ ansible_facts.getent_passwd[app_service_user][1] }}"
+
 # include_tasks, not import_tasks — each application needs its own
 # isolated variable scope per iteration (computed UID, subdomain, gate
 # state, registered render results), which only include's dynamic,

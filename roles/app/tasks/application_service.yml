@@ -1,0 +1,26 @@
+---
+- name: Render this application's systemd unit
+  ansible.builtin.template:
+    src: application.service.j2
+    dest: "/etc/systemd/system/atlas-app-{{ app.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  register: app_unit
+
+- name: Reload systemd if this application's unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: app_unit.changed
+
+- name: Enable and start this application
+  ansible.builtin.systemd:
+    name: "atlas-app-{{ app.name }}"
+    enabled: true
+    state: started
+
+- name: Restart this application if its configuration changed
+  ansible.builtin.systemd:
+    name: "atlas-app-{{ app.name }}"
+    state: restarted
+  when: app_compose.changed or app_unit.changed

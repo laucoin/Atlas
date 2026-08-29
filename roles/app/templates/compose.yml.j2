@@ -1,0 +1,70 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+  # Not shared with any other application — functional/features/app-
+  # hosting rule 6: "Isolation is per application... its own private
+  # network with its own database." A fresh network per app, not the
+  # single shared "internal" pattern infrastructure roles use for their
+  # own, fixed set of containers.
+  internal:
+    driver: bridge
+
+services:
+{% if app.database | default(false) %}
+  postgres:
+    image: {{ app_postgres_image }}
+    container_name: "app-{{ app.name }}-postgres"
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ app_postgres_uid }}:{{ app_postgres_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    environment:
+      POSTGRES_DB: {{ app.name }}
+      POSTGRES_USER: {{ app.name }}
+      POSTGRES_PASSWORD: "{{ app.postgres_password }}"
+    volumes:
+      - ./data-postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+{% endif %}
+  app:
+    image: "{{ app.image }}@{{ app.digest }}"
+    container_name: "app-{{ app.name }}"
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ app_container_uid }}:{{ app_container_uid }}"
+    tmpfs:
+      - /tmp
+{% if app.database | default(false) %}
+    depends_on:
+      - postgres
+    # Both conventions, since which one the application's own code
+    # expects isn't something a generic declaration can know — the
+    # maintainer's own project uses whichever fits.
+    environment:
+      DATABASE_URL: "postgresql://{{ app.name }}:{{ app.postgres_password }}@postgres:5432/{{ app.name }}"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: "{{ app.name }}"
+      DB_USER: "{{ app.name }}"
+      DB_PASSWORD: "{{ app.postgres_password }}"
+{% endif %}
+{% if app.storage | default(false) %}
+    volumes:
+      - "./data:{{ app.storage_path | default('/data') }}"
+{% endif %}
+    networks:
+      - proxy
+      - internal
