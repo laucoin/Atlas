@@ -1,0 +1,48 @@
+// Host metrics, including systemd unit state — this project has one
+// systemd unit per stack (roles/*/templates/*.service.j2), so a unit's
+// active state and restart count is this deployment's actual signal
+// for "a container restarted" (functional/features/observability's own
+// scenario), at stack granularity. Per-container resource metrics
+// (cAdvisor-style CPU/memory) are a known, deliberate gap: cAdvisor
+// reads cgroup filesystem paths that assume a rootful Docker layout,
+// and rootless Docker delegates cgroups under a user systemd slice
+// cAdvisor cannot read without elevated privileges this deployment
+// won't grant it — a real, currently-open upstream limitation
+// (github.com/google/cadvisor/issues/3728), not an oversight.
+prometheus.exporter.unix "host" {
+  enable_collectors = ["systemd"]
+
+  systemd {
+    enable_restarts = true
+  }
+}
+
+prometheus.scrape "host" {
+  targets    = prometheus.exporter.unix.host.targets
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+}
+
+prometheus.remote_write "victoriametrics" {
+  endpoint {
+    url = "http://victoriametrics:{{ observability_victoriametrics_port }}/api/v1/write"
+  }
+}
+
+// The rootless docker.sock, not the standard rootful /var/run/docker.sock
+// path — matches DOCKER_HOST in every other role's own systemd unit.
+discovery.docker "containers" {
+  host = "unix:///run/user/{{ observability_service_uid }}/docker.sock"
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///run/user/{{ observability_service_uid }}/docker.sock"
+  targets    = discovery.docker.containers.targets
+  labels     = {}
+  forward_to = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:{{ observability_loki_port }}/loki/api/v1/push"
+  }
+}

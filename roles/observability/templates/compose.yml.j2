@@ -56,3 +56,33 @@ services:
       - ./loki/data:/loki
     networks:
       - observability-internal
+
+  alloy:
+    image: {{ observability_alloy_image }}
+    container_name: alloy
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Runs as the docker service user's own real UID, not an isolated
+    # rootless-remapped identity like every other container here — it
+    # has to, since it needs read access to that user's own rootless
+    # docker.sock to discover containers and their logs. This is a
+    # deliberate, narrow exception (same category as zigbee2mqtt's
+    # group_add: dialout), not a relaxation of the pattern generally.
+    user: "{{ observability_service_uid }}:{{ observability_service_uid }}"
+    # Grafana Alloy has multiple independently-reported unbounded-growth
+    # issues in the wild (e.g. github.com/grafana/alloy/issues/3953) —
+    # a hard ceiling plus its own restart policy is cheap insurance
+    # against a slow leak going unnoticed between converges.
+    mem_limit: 1g
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./alloy/data:/var/lib/alloy/data
+      - "/run/user/{{ observability_service_uid }}/docker.sock:/run/user/{{ observability_service_uid }}/docker.sock"
+    networks:
+      - observability-internal

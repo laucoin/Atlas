@@ -22,3 +22,5 @@ observability_loki_port: 3100
 # duration Loki's own retention_period expects in hours, not a day
 # suffix.
 observability_logs_retention: 744h
+
+observability_alloy_image: "grafana/alloy:v1.19.2"

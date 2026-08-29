@@ -34,4 +34,5 @@
     state: restarted
   when: >-
     observability_compose.changed or observability_unit.changed or
-    observability_loki_configuration.changed
+    observability_loki_configuration.changed or
+    observability_alloy_configuration.changed
