@@ -4,3 +4,6 @@
 
 - name: Configure the firewall
   ansible.builtin.import_tasks: firewall.yml
+
+- name: Configure kernel hardening and mandatory access control
+  ansible.builtin.import_tasks: kernel.yml
