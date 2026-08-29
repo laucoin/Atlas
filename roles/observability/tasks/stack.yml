@@ -22,6 +22,7 @@
   ansible.builtin.set_fact:
     observability_victoriametrics_host_uid: "{{ docker_subuid_start + observability_victoriametrics_uid - 1 }}"
     observability_loki_host_uid: "{{ docker_subuid_start + observability_loki_uid - 1 }}"
+    observability_grafana_host_uid: "{{ docker_subuid_start + observability_grafana_uid - 1 }}"
 
 - name: Ensure the observability stack directory exists
   ansible.builtin.file:
@@ -72,6 +73,49 @@
     group: "{{ observability_service_uid }}"
     mode: "0640"
   register: observability_alloy_configuration
+
+- name: Ensure grafana's own directories exist, owned for the container
+  ansible.builtin.file:
+    path: "{{ observability_stack_dir }}/grafana/{{ item }}"
+    state: directory
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0750"
+  loop:
+    - data
+    - provisioning/datasources
+    - provisioning/dashboards
+    - dashboards
+
+- name: Render Grafana's datasource provisioning
+  ansible.builtin.template:
+    src: grafana-datasources.yaml.j2
+    dest: "{{ observability_stack_dir }}/grafana/provisioning/datasources/datasources.yaml"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_datasources
+
+- name: Render Grafana's dashboard provisioning
+  ansible.builtin.template:
+    src: grafana-dashboard-provisioning.yaml.j2
+    dest: "{{ observability_stack_dir }}/grafana/provisioning/dashboards/dashboards.yaml"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_dashboard_provisioning
+
+# Plain files, not templates — Grafana's own dashboard JSON already uses
+# {{ }} as ITS template syntax (e.g. legend formatting), which would
+# collide with Jinja2's if these were rendered instead of copied.
+- name: Copy the provisioned dashboards
+  ansible.builtin.copy:
+    src: dashboards/
+    dest: "{{ observability_stack_dir }}/grafana/dashboards/"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_dashboards
 
 - name: Render the observability Compose file
   ansible.builtin.template:

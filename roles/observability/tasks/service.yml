@@ -35,4 +35,7 @@
   when: >-
     observability_compose.changed or observability_unit.changed or
     observability_loki_configuration.changed or
-    observability_alloy_configuration.changed
+    observability_alloy_configuration.changed or
+    observability_grafana_datasources.changed or
+    observability_grafana_dashboard_provisioning.changed or
+    observability_grafana_dashboards.changed

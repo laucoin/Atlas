@@ -1,0 +1,22 @@
+http:
+  routers:
+    # Only Grafana is published — victoriametrics, loki and alloy stay
+    # off traefik entirely, per architecture.md's own placement table
+    # ("Not published" for all three). Gated: "View dashboards: admin
+    # only" per functional/features/observability's own permission
+    # table, stricter than sonarqube's admin+collaborator.
+    grafana:
+      rule: "Host(`grafana.atlas.{{ atlas_domain }}`)"
+      entrypoints:
+        - websecure
+      service: grafana
+      tls:
+        certResolver: atlas
+      middlewares:
+        - atlas-gate@file
+
+  services:
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://grafana:{{ observability_grafana_http_port }}"

@@ -1,4 +1,7 @@
 networks:
+  proxy:
+    external: true
+    name: proxy
   observability-internal:
     name: "{{ observability_network }}"
     driver: bridge
@@ -85,4 +88,40 @@ services:
       - ./alloy/data:/var/lib/alloy/data
       - "/run/user/{{ observability_service_uid }}/docker.sock:/run/user/{{ observability_service_uid }}/docker.sock"
     networks:
+      - observability-internal
+
+  grafana:
+    image: {{ observability_grafana_image }}
+    container_name: grafana
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ observability_grafana_uid }}:{{ observability_grafana_uid }}"
+    tmpfs:
+      - /tmp
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: "{{ observability_grafana_admin_password }}"
+      # "Everything is declared... changes made through the interface
+      # are drift" (rule 5) — nothing should persist a change made in
+      # the UI past the next converge.
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/host-overview.json
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:{{ observability_grafana_http_port }}:{{ observability_grafana_http_port }}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:{{ observability_grafana_http_port }}/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    networks:
+      - proxy
       - observability-internal

@@ -24,3 +24,7 @@ observability_loki_port: 3100
 observability_logs_retention: 744h
 
 observability_alloy_image: "grafana/alloy:v1.19.2"
+
+observability_grafana_uid: 2052
+observability_grafana_image: "grafana/grafana:13.2.0"
+observability_grafana_http_port: 3000
