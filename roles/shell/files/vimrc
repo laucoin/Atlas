@@ -1,0 +1,37 @@
+" Managed by Ansible — roles/shell. Do not edit by hand.
+" Port of laucoin/Ponos's dotfiles/vim/vimrc — nothing macOS- or
+" repository-specific in the original, so this is carried across as-is.
+
+" --- Plugin / Theme ---
+packadd! dracula
+syntax enable
+set termguicolors
+try
+  colorscheme dracula
+catch
+  colorscheme desert " Fallback if the theme failed to install
+endtry
+
+" --- General Settings ---
+set encoding=utf-8
+set number
+set hidden         " Switch buffers without saving
+set clipboard=unnamedplus
+set mouse=a
+
+" --- Indentation ---
+set tabstop=4      " Number of visual spaces per TAB
+set shiftwidth=4   " Number of spaces for auto-indent
+set smartindent
+set tw=0           " Disable hard wrap
+
+" --- Search ---
+set ignorecase
+set smartcase
+set incsearch      " Show matches as you type
+set hlsearch       " Highlight all matches
+
+" --- Visuals / Whitespace ---
+" Shows invisible characters like trailing spaces and tabs
+set list
+set listchars=tab:→\ ,eol:¬,nbsp:␣,trail:•,extends:⟩,precedes:⟨

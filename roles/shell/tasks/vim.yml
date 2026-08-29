@@ -1,0 +1,44 @@
+---
+- name: Ensure each account's .vim directory exists
+  ansible.builtin.file:
+    path: "{{ item.home }}/.vim"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: "0755"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+- name: Deploy vimrc for each account
+  ansible.builtin.copy:
+    src: vimrc
+    dest: "{{ item.home }}/.vim/vimrc"
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: "0644"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+- name: Clone the Vim Dracula theme for each account
+  ansible.builtin.git:
+    repo: https://github.com/dracula/vim.git
+    dest: "{{ item.home }}/.vim/pack/themes/opt/dracula"
+    version: master
+    depth: 1
+    update: false
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+- name: Own each account's .vim directory
+  ansible.builtin.file:
+    path: "{{ item.home }}/.vim"
+    state: directory
+    recurse: true
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
