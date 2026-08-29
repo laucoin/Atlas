@@ -1,0 +1,22 @@
+# Delegates human sign-in to the reverse proxy: the atlas-gate forwardAuth
+# middleware already requires Authelia sign-in with a second factor before
+# a request ever reaches this container, and returns the signed-in
+# identity as these exact header names (roles/authelia/templates/
+# traefik-authelia.yml.j2's authResponseHeaders). SonarQube trusts them
+# and provisions the user just-in-time under their own identity — no
+# separate SonarQube-local account or password, consistent with "no
+# self-service account creation" everywhere else in Atlas.
+#
+# Verified against SonarQube Community Build's own docs (instance-
+# administration/authentication/http-header): generic OpenID Connect is
+# NOT available in Community Build, but HTTP header trust auth is, and
+# it is exactly what Authelia's forwardAuth already produces.
+#
+# Traefik strips any client-supplied copy of these headers before this
+# point (roles/sonarqube/templates/traefik-sonarqube.yml.j2), so a
+# request can only carry them if the gate itself set them.
+sonar.web.sso.enable=true
+sonar.web.sso.loginHeader=Remote-User
+sonar.web.sso.nameHeader=Remote-Name
+sonar.web.sso.emailHeader=Remote-Email
+sonar.web.sso.groupsHeader=Remote-Groups
