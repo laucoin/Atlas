@@ -32,14 +32,6 @@
     group: "{{ theme_error_pages_host_uid }}"
     mode: "0644"
 
-- name: Render the themed error page
-  ansible.builtin.template:
-    src: error.html.j2
-    dest: "{{ theme_error_pages_stack_dir }}/html/error.html"
-    owner: "{{ docker_service_user }}"
-    group: "{{ docker_service_user }}"
-    mode: "0644"
-
 - name: Render the error-pages nginx configuration
   ansible.builtin.template:
     src: error-pages-nginx.conf.j2
