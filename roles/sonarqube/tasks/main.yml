@@ -4,3 +4,9 @@
 
 - name: Render the sonarqube configuration
   ansible.builtin.import_tasks: configuration.yml
+
+- name: Activate the sonarqube service
+  ansible.builtin.import_tasks: service.yml
+
+- name: Integrate sonarqube with traefik
+  ansible.builtin.import_tasks: traefik.yml

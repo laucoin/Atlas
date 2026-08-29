@@ -1,0 +1,54 @@
+http:
+  middlewares:
+    # A client could otherwise forge SonarQube's trust headers directly
+    # (roles/sonarqube/templates/sonar.properties.j2) and impersonate
+    # anyone. Strip any existing copy before either router forwards the
+    # request; sonarqube-ui's atlas-gate re-adds the legitimate ones from
+    # Authelia's own response. sonarqube-api has nothing that re-adds
+    # them, by design — the scanner authenticates with its own token,
+    # never with these headers at all.
+    sonarqube-strip-sso-headers:
+      headers:
+        customRequestHeaders:
+          Remote-User: ""
+          Remote-Name: ""
+          Remote-Email: ""
+          Remote-Groups: ""
+
+  routers:
+    # Scanner/analysis traffic (a CI token, not a browser session) — the
+    # second named exception to the gate per functional/features/code-
+    # quality rule 1. Higher priority than sonarqube-ui so it wins on
+    # the shared Host rule for these specific paths.
+    sonarqube-api:
+      rule: "Host(`sonarqube.atlas.{{ atlas_domain }}`) && (PathPrefix(`/api`) || PathPrefix(`/batch`))"
+      priority: 100
+      entrypoints:
+        - websecure
+      service: sonarqube
+      tls:
+        certResolver: atlas
+      middlewares:
+        - sonarqube-strip-sso-headers
+
+    # The human interface — gated, per functional/features/code-quality
+    # rule 2 and functional/roles-and-permissions (admin and collaborator
+    # only; access_control in authelia's own configuration further
+    # restricts which signed-in identities may pass).
+    sonarqube-ui:
+      rule: "Host(`sonarqube.atlas.{{ atlas_domain }}`)"
+      priority: 1
+      entrypoints:
+        - websecure
+      service: sonarqube
+      tls:
+        certResolver: atlas
+      middlewares:
+        - sonarqube-strip-sso-headers
+        - atlas-gate@file
+
+  services:
+    sonarqube:
+      loadBalancer:
+        servers:
+          - url: "http://sonarqube:{{ sonarqube_http_port }}"

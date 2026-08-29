@@ -1,0 +1,37 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ sonarqube_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    sonarqube_service_uid: "{{ ansible_facts.getent_passwd[sonarqube_service_user][1] }}"
+
+- name: Render the sonarqube systemd unit
+  ansible.builtin.template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: sonarqube_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: sonarqube_unit.changed
+
+- name: Enable and start the sonarqube stack
+  ansible.builtin.systemd:
+    name: sonarqube
+    enabled: true
+    state: started
+
+- name: Restart the sonarqube stack if its configuration changed
+  ansible.builtin.systemd:
+    name: sonarqube
+    state: restarted
+  when: >-
+    sonarqube_compose.changed or sonarqube_configuration.changed or
+    sonarqube_unit.changed

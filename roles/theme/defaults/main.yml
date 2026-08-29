@@ -43,6 +43,8 @@ theme_dashboard_container: atlas-dashboard
 
 # Declares every service that appears on the dashboard, per unified-theme
 # rule 5: "rendered from the same declarations that define the services."
-# Empty for now — no service role has landed yet to declare one (Phase 3).
-# Each future entry: {name, subdomain, description}.
-atlas_services: []
+# Each entry: {name, subdomain, description}.
+atlas_services:
+  - name: SonarQube
+    subdomain: sonarqube
+    description: Code quality and technical debt tracking
