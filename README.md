@@ -115,7 +115,6 @@ Phase 3 / Services is nearly complete: `forgejo`, `sonarqube`, `homeassistant` a
 | **age** on the workstation | Generates and holds the key that decrypts secrets during a converge; the key never reaches the host |
 | **sops** on the workstation | Encrypts/edits per-value secrets in `inventory/**/*.sops.yaml`; decryption during a converge goes through the `community.sops` collection instead |
 | **Docker** on the host | Installed and configured by the `docker` role, rootless under its own service user |
-| **gh** on the workstation | Used to open the stacked pull requests described in AGENTS.md |
 | A domain with a supported DNS provider | Traefik's wildcard certificate uses DNS-01 (OVH by default — see `roles/traefik/templates/compose.yml.j2` for the provider) |
 | A Zigbee coordinator (USB), for `homeassistant` | A stable `/dev/serial/by-id/...` path is required — see the `homeassistant_zigbee_*` variables below |
 | A Home Assistant Companion app install, for `observability` alerting | Its notify service name and a long-lived access token are needed for Grafana to reach it — both are only obtainable after Home Assistant itself is up |
@@ -163,7 +162,6 @@ Confirm you can reach it: `ssh root@<its address>`.
 
 - **Ansible**, then this repository's collections: `ansible-galaxy collection install -r requirements.yml`
 - **age** and **sops**
-- **gh**, for the stacked pull requests described in `AGENTS.md`
 - A Zigbee coordinator plugged into the host, if you're converging `homeassistant` — find its stable path with `ls -l /dev/serial/by-id/` on the host.
 
 #### 3. Point the inventory at the real machine
