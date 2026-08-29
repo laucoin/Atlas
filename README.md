@@ -236,7 +236,7 @@ Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHAN
 
 None of these files exist yet — `sops <path>` creates one the first time you run it. It opens `$EDITOR` (falls back to `vi`) on a scratch plaintext buffer; write plain YAML with the keys shown below, save and quit, and SOPS encrypts it in place on disk using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
 
-**`sops inventory/group_vars/all/traefik.sops.yaml`** — DNS-01 credentials (swap for your own DNS provider's if not using OVH):
+**`sops inventory/group_vars/all/traefik.sops.yaml`** — DNS-01 credentials (swap for your own DNS provider's if not using OVH). **Not generated locally** — create them on [OVH's API token page](https://api.ovh.com/createToken/), scoped at minimum to `GET/PUT/POST/DELETE` on `/domain/zone/*`:
 
 ```yaml
 ovh_application_key: <value>
@@ -244,24 +244,24 @@ ovh_application_secret: <value>
 ovh_consumer_key: <value>
 ```
 
-**`sops inventory/group_vars/all/authelia.sops.yaml`** — `authelia_oidc_hmac_secret` is 64+ random characters, `authelia_oidc_issuer_private_key` is a PEM-encoded RSA private key (2048-bit minimum, needed for Home Assistant's OIDC sign-in — generate one with `openssl genrsa 2048`):
+**`sops inventory/group_vars/all/authelia.sops.yaml`**:
 
 ```yaml
-authelia_jwt_secret: <value>
-authelia_session_secret: <value>
-authelia_storage_encryption_key: <value>
-authelia_postgres_password: <value>
-authelia_redis_password: <value>
-authelia_smtp_username: <value>
-authelia_smtp_password: <value>
-authelia_oidc_hmac_secret: <value>
-authelia_oidc_issuer_private_key: |
+authelia_jwt_secret: <value>                # openssl rand -base64 32
+authelia_session_secret: <value>             # openssl rand -base64 32
+authelia_storage_encryption_key: <value>     # openssl rand -base64 32
+authelia_postgres_password: <value>          # openssl rand -base64 32
+authelia_redis_password: <value>             # openssl rand -base64 32
+authelia_smtp_username: <value>              # not generated — your mail account's address
+authelia_smtp_password: <value>              # not generated — an app password from your mail provider, e.g. https://myaccount.google.com/apppasswords for Gmail
+authelia_oidc_hmac_secret: <value>           # openssl rand -hex 32 (64+ random characters)
+authelia_oidc_issuer_private_key: |          # openssl genrsa 2048 (paste the full PEM output, 2048-bit minimum)
   -----BEGIN RSA PRIVATE KEY-----
   <value>
   -----END RSA PRIVATE KEY-----
 ```
 
-**`sops inventory/group_vars/all/forgejo.sops.yaml`**:
+**`sops inventory/group_vars/all/forgejo.sops.yaml`** — all three are `openssl rand -base64 32`:
 
 ```yaml
 forgejo_postgres_password: <value>
@@ -269,13 +269,13 @@ forgejo_secret_key: <value>
 forgejo_internal_token: <value>
 ```
 
-**`sops inventory/group_vars/all/sonarqube.sops.yaml`**:
+**`sops inventory/group_vars/all/sonarqube.sops.yaml`** — `openssl rand -base64 32`:
 
 ```yaml
 sonarqube_postgres_password: <value>
 ```
 
-**`sops inventory/group_vars/all/observability.sops.yaml`** — `observability_ha_long_lived_token` has to wait until step 8; leave it as any placeholder value for now and come back to this file (`sops` re-opens it decrypted for editing) once you have the real token:
+**`sops inventory/group_vars/all/observability.sops.yaml`** — `observability_grafana_admin_password` is `openssl rand -base64 20`; `observability_ha_long_lived_token` has to wait until step 8 (not generated — issued by Home Assistant itself). Leave it as any placeholder value for now and come back to this file (`sops` re-opens it decrypted for editing) once you have the real token:
 
 ```yaml
 observability_grafana_admin_password: <value>
