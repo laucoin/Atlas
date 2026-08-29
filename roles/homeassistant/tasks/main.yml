@@ -4,3 +4,9 @@
 
 - name: Activate the Zigbee bridge service
   ansible.builtin.import_tasks: bridge_service.yml
+
+- name: Render the homeassistant stack
+  ansible.builtin.import_tasks: stack.yml
+
+- name: Activate the homeassistant service
+  ansible.builtin.import_tasks: service.yml

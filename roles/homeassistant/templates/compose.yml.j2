@@ -1,0 +1,34 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+  homeassistant-internal:
+    external: true
+    name: "{{ homeassistant_bridge_network }}"
+
+services:
+  homeassistant:
+    image: {{ homeassistant_image }}
+    container_name: homeassistant
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ homeassistant_uid }}:{{ homeassistant_uid }}"
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:{{ homeassistant_http_port }}:{{ homeassistant_http_port }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ homeassistant_http_port }}/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    volumes:
+      - ./config:/config
+    networks:
+      - proxy
+      - homeassistant-internal
