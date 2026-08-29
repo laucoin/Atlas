@@ -1,0 +1,35 @@
+APP_NAME = Atlas
+RUN_MODE = prod
+RUN_USER = git
+
+[server]
+DOMAIN = forgejo.atlas.{{ atlas_domain }}
+ROOT_URL = https://forgejo.atlas.{{ atlas_domain }}/
+HTTP_PORT = {{ forgejo_http_port }}
+SSH_PORT = {{ forgejo_ssh_port }}
+SSH_LISTEN_PORT = {{ forgejo_ssh_port }}
+START_SSH_SERVER = true
+
+[database]
+DB_TYPE = postgres
+HOST = postgres:5432
+NAME = forgejo
+USER = forgejo
+PASSWD = {{ forgejo_postgres_password }}
+
+[packages]
+ENABLED = true
+STORAGE_TYPE = local
+
+[storage.packages]
+PATH = /data/packages
+
+[security]
+INSTALL_LOCK = true
+SECRET_KEY = {{ forgejo_secret_key }}
+INTERNAL_TOKEN = {{ forgejo_internal_token }}
+
+# No self-service registration — accounts are declared in the repository,
+# same rule as everywhere else in Atlas (functional/roles-and-permissions).
+[service]
+DISABLE_REGISTRATION = true
