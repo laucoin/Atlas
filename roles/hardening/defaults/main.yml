@@ -1,0 +1,24 @@
+---
+hardening_ssh_port: 22
+hardening_ssh_permitted_user: "{{ atlas_admin_user }}"
+hardening_ssh_login_grace_time: 20
+hardening_ssh_max_auth_tries: 3
+
+hardening_ssh_kex_algorithms:
+  - curve25519-sha256
+  - curve25519-sha256@libssh.org
+  - diffie-hellman-group16-sha512
+  - diffie-hellman-group18-sha512
+
+hardening_ssh_ciphers:
+  - chacha20-poly1305@openssh.com
+  - aes256-gcm@openssh.com
+  - aes128-gcm@openssh.com
+  - aes256-ctr
+  - aes192-ctr
+  - aes128-ctr
+
+hardening_ssh_macs:
+  - hmac-sha2-512-etm@openssh.com
+  - hmac-sha2-256-etm@openssh.com
+  - umac-128-etm@openssh.com
