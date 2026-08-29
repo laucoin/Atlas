@@ -13,3 +13,6 @@
 
 - name: Activate the homeassistant service
   ansible.builtin.import_tasks: service.yml
+
+- name: Integrate homeassistant with traefik
+  ansible.builtin.import_tasks: traefik.yml
