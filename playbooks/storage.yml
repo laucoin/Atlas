@@ -16,3 +16,8 @@
       ansible.builtin.import_role:
         name: storage
         tasks_from: reconcile
+
+    - name: Carve /var/log out into its own volume
+      ansible.builtin.import_role:
+        name: storage
+        tasks_from: carve_out_logs

@@ -1,0 +1,58 @@
+---
+- name: Check whether /var/log already has its own volume
+  ansible.builtin.command: findmnt --noheadings --output SOURCE /var/log
+  register: storage_varlog_mount
+  changed_when: false
+  failed_when: false
+
+- name: Carve /var/log out of /var into its own volume
+  when: "'lv_logs' not in storage_varlog_mount.stdout"
+  block:
+    - name: Mount the new logs volume at a temporary path
+      ansible.posix.mount:
+        path: /mnt/lv_logs
+        src: "/dev/{{ storage_volume_group }}/lv_logs"
+        fstype: ext4
+        state: mounted
+
+    - name: Copy the current log contents across
+      ansible.builtin.command: rsync -aHAX --delete /var/log/ /mnt/lv_logs/
+      changed_when: true
+
+    - name: Stop systemd-journald for the final sync
+      ansible.builtin.systemd:
+        name: systemd-journald
+        state: stopped
+
+    - name: Final delta sync
+      ansible.builtin.command: rsync -aHAX --delete /var/log/ /mnt/lv_logs/
+      changed_when: true
+
+    - name: Unmount the temporary mount
+      ansible.posix.mount:
+        path: /mnt/lv_logs
+        state: unmounted
+
+    - name: Move the old /var/log directory aside
+      ansible.builtin.command: mv /var/log /var/log.pre-lv_logs
+      args:
+        creates: /var/log.pre-lv_logs
+
+    - name: Recreate the /var/log mount point
+      ansible.builtin.file:
+        path: /var/log
+        state: directory
+        mode: "0755"
+
+    - name: Mount the logs volume at /var/log and persist it
+      ansible.posix.mount:
+        path: /var/log
+        src: "/dev/{{ storage_volume_group }}/lv_logs"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    - name: Restart systemd-journald
+      ansible.builtin.systemd:
+        name: systemd-journald
+        state: started
