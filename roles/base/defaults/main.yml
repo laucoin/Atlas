@@ -1,0 +1,40 @@
+---
+base_packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - vim
+  - htop
+  - rsync
+
+base_timezone: "{{ atlas_timezone }}"
+base_locale: "{{ atlas_locale }}"
+base_admin_user: "{{ atlas_admin_user }}"
+base_admin_ssh_public_key: "{{ atlas_admin_ssh_public_key }}"
+
+# Reduce attack surface: common packages a conventional Debian install may
+# carry that Atlas has no use for. Safe to declare even if a given package
+# was never installed — apt state: absent is a no-op in that case.
+#
+# base always runs first in playbooks/site.yml, before every other role
+# installs anything, so this can never turn into an install-then-purge-
+# then-reinstall cycle within one converge. The one real risk is a name
+# collision with something a LATER role needs: before adding an entry
+# here, grep every other role's defaults (`git grep -h -A20 '_packages:'`)
+# to confirm nothing else in the repo installs it.
+base_purge_packages:
+  - exim4
+  - exim4-base
+  - exim4-config
+  - exim4-daemon-light
+  - avahi-daemon
+  - avahi-utils
+  - cups
+  - cups-common
+  - nfs-common
+  - rpcbind
+  - telnet
+  - rsh-client
+  - talk
+  - ntalk
+  - popularity-contest

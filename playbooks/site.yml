@@ -1,0 +1,7 @@
+---
+- name: Converge Atlas
+  hosts: atlas
+  become: true
+  roles:
+    - role: base
+      tags: [base]

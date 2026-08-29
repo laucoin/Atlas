@@ -1,0 +1,15 @@
+---
+# The machine's real address. Replace before the first converge.
+ansible_host: CHANGE_ME
+
+# Ansible connects through the same gateway translation everything else
+# does — the public port (atlas_ssh_port, 222), not the internal one sshd
+# listens on (hardening_ssh_port, 22). If converging from the same LAN
+# before the gateway rule is relevant, override on the command line:
+# -e ansible_port=22
+ansible_port: "{{ atlas_ssh_port }}"
+
+# Bootstrap only: a fresh Debian install has no admin account yet, so the
+# first converge connects as root. The hardening role disables root SSH
+# once the admin account and its key are in place.
+ansible_user: root
