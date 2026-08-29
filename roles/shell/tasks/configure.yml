@@ -1,0 +1,19 @@
+---
+- name: Deploy .zshrc for each account
+  ansible.builtin.copy:
+    src: zshrc
+    dest: "{{ item.home }}/.zshrc"
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: "0644"
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+- name: Set zsh as the login shell for each account
+  ansible.builtin.user:
+    name: "{{ item.user }}"
+    shell: /usr/bin/zsh
+  loop: "{{ shell_targets }}"
+  loop_control:
+    label: "{{ item.user }}"

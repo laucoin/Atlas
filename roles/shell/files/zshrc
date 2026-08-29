@@ -1,0 +1,38 @@
+# Managed by Ansible — roles/shell. Do not edit by hand.
+# Trimmed port of laucoin/Ponos's dotfiles/zsh/.zshrc — repository-oriented
+# and workstation-only pieces (Homebrew, pyenv/nvm/SDKMAN, dev-path env vars,
+# git-repo helpers) are dropped; there is nothing for them to act on here.
+
+unsetopt nounset 2>/dev/null || true
+
+# Starship prompt
+if command -v starship >/dev/null 2>&1; then
+	eval "$(starship init zsh)"
+fi
+
+# zsh-autosuggestions
+if [[ -f "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+	source "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+# zsh-syntax-highlighting
+if [[ -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+	source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# Aliases
+alias ll="ls -l"
+alias ".."="cd .."
+alias "..."="cd ../.."
+alias g="git"
+alias sshk="ssh-add -L"
+
+# Word navigation shortcuts (Option+Arrow / Alt+Arrow)
+bindkey '^[b' backward-word
+bindkey '^[f' forward-word
+bindkey '\e[1;3D' backward-word
+bindkey '\e[1;3C' forward-word
+bindkey '\e[1;9D' backward-word
+bindkey '\e[1;9C' forward-word
+bindkey '\e\e[D' backward-word
+bindkey '\e\e[C' forward-word
