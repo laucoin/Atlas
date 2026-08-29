@@ -1,0 +1,31 @@
+---
+- name: Assert the declared volume group exists
+  ansible.builtin.assert:
+    that: storage_volume_group in (ansible_lvm.vgs | default({}))
+    fail_msg: >-
+      Volume group {{ storage_volume_group }} not found. Storage must be
+      provisioned with playbooks/storage.yml before the first converge.
+    success_msg: "Volume group {{ storage_volume_group }} present."
+
+- name: Assert every declared volume is mounted at its declared size
+  ansible.builtin.assert:
+    that:
+      - mount_info.mount is defined
+      - (mount_info.size_total | int) >= (item.size_gb * 1000000000)
+    fail_msg: >-
+      {{ item.mount }} ({{ item.name }}) is missing or smaller than the
+      declared {{ item.size_gb }} GB. Run playbooks/storage.yml to reconcile.
+    success_msg: "{{ item.mount }} ({{ item.name }}) matches its declared size."
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    mount_info: "{{ (ansible_mounts | selectattr('mount', 'equalto', item.mount) | list | first) | default({}) }}"
+
+- name: Assert swap is active at its declared size
+  ansible.builtin.assert:
+    that: (ansible_swaptotal_mb | int) >= (storage_swap_size_gb * 1000)
+    fail_msg: >-
+      Swap is smaller than the declared {{ storage_swap_size_gb }} GB.
+      Run playbooks/storage.yml to reconcile.
+    success_msg: "Swap matches its declared size."

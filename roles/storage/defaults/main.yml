@@ -1,0 +1,31 @@
+---
+storage_volume_group: vg_atlas
+
+# System, var and swap already exist from the manual Debian install —
+# asserted and grown like every other declared volume, never created.
+# Registry and object-storage volumes aren't declared yet: they're a Phase 3
+# concern (forgejo, garage), added here once those roles actually land.
+storage_volumes:
+  - name: system
+    lv: lv_root
+    mount: /
+    size_gb: 20
+  - name: var
+    lv: lv_var
+    mount: /var
+    size_gb: 15
+  - name: logs
+    lv: lv_logs
+    mount: /var/log
+    size_gb: 20
+  - name: container_runtime
+    lv: lv_docker
+    mount: /var/lib/docker
+    size_gb: 60
+  - name: application_data
+    lv: lv_data
+    mount: /srv
+    size_gb: 100
+
+storage_swap_lv: lv_swap
+storage_swap_size_gb: 4
