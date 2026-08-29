@@ -1,0 +1,32 @@
+http:
+  routers:
+    authelia:
+      rule: "Host(`auth.{{ authelia_session_domain }}`)"
+      entrypoints:
+        - websecure
+      service: authelia
+      tls:
+        certResolver: atlas
+
+  services:
+    authelia:
+      loadBalancer:
+        servers:
+          - url: "http://authelia:9091"
+
+  middlewares:
+    # Reusable gate for every future protected route: reference
+    # atlas-gate@file on a router's middlewares list. Not applied globally
+    # like atlas-errors, because unlike error pages the gate has named
+    # exceptions (functional/roles-and-permissions) that must be able to
+    # opt out — an entrypoint-level middleware can't be selectively skipped
+    # per router, only a per-router one can.
+    atlas-gate:
+      forwardAuth:
+        address: "http://authelia:9091/api/authz/forward-auth"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Groups
+          - Remote-Name
+          - Remote-Email
