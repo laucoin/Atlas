@@ -1,0 +1,18 @@
+---
+- name: Provision Atlas storage
+  hosts: atlas
+  become: true
+  vars:
+    storage_confirm: false
+  pre_tasks:
+    - name: Refuse to run without explicit confirmation
+      ansible.builtin.assert:
+        that: storage_confirm | bool
+        fail_msg: >-
+          Refusing to provision storage without confirmation. Re-run with
+          -e storage_confirm=true after reviewing --check --diff.
+  tasks:
+    - name: Reconcile the declared storage layout
+      ansible.builtin.import_role:
+        name: storage
+        tasks_from: reconcile

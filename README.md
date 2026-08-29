@@ -23,14 +23,15 @@ atlas/
   inventory/            host and group variables — domain, timezone, sizes, image versions
   playbooks/
     site.yml            the everyday converge
-    storage.yml         destructive; requires an explicit confirmation variable
+    storage.yml         provisioning; requires an explicit confirmation variable, never shrinks
   roles/
     base/                packages, time, locale, the admin account
-    hardening/           SSH, firewall, kernel settings, access control, ban rules   [not yet implemented]
+    hardening/           SSH, firewall, kernel settings, access control, ban rules, unattended updates
+    storage/             volume assertion (site.yml) and reconciliation (storage.yml)
     ...                  see technical/ansible-conventions for the full role list    [not yet implemented]
 ```
 
-Only `base` exists today. Roles land one stacked PR at a time, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
+`base`, `hardening` and `storage` exist today. Roles land one stacked PR at a time, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
 
 ## How to install and use it? ⚙️
 
@@ -54,6 +55,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `inventory/host_vars/atlas/main.yml` | `ansible_host` (the machine's real address) and `ansible_user` (bootstrap connects as `root`) | `CHANGE_ME` / `root` |
 | `inventory/group_vars/all/main.yml` | `atlas_timezone`, `atlas_locale`, `atlas_admin_user`, `atlas_admin_ssh_public_key`, `atlas_ssh_port` (documentation only — see below) | `Europe/Paris`, `en_US.UTF-8`, `atlas`, `CHANGE_ME`, `222` |
 | `inventory/group_vars/all/images.yml` | Every image tag and digest | not yet created |
+| `roles/storage/defaults/main.yml` | `storage_volume_group` and the five managed volumes (mount, size) | `vg_atlas`; see the role for the full list |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
 | Encrypted values | Secrets, encrypted per value with an age key | not yet needed by any implemented role |
 
@@ -75,6 +77,11 @@ ansible-playbook playbooks/site.yml --check --diff   # review first, always
 ansible-playbook playbooks/site.yml                  # apply
 ansible-playbook playbooks/site.yml                  # re-run immediately: must report zero changes
 ansible-playbook playbooks/site.yml --tags base       # converge one role only
+
+# Storage never changes as part of the above — site.yml only asserts it.
+# Provisioning is separate and requires explicit confirmation:
+ansible-playbook playbooks/storage.yml --check --diff
+ansible-playbook playbooks/storage.yml -e storage_confirm=true
 ```
 
 ## Contributing 💻

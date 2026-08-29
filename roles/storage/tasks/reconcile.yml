@@ -1,0 +1,33 @@
+---
+- name: Install LVM tools
+  ansible.builtin.apt:
+    name: lvm2
+    state: present
+
+- name: Size each logical volume (create if missing, grow if undersized, never shrink)
+  community.general.lvol:
+    vg: "{{ storage_volume_group }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size_gb }}g"
+    shrink: false
+    state: present
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create or grow each filesystem
+  community.general.filesystem:
+    fstype: ext4
+    dev: "/dev/{{ storage_volume_group }}/{{ item.lv }}"
+    resizefs: true
+  loop: "{{ storage_volumes }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# System, var and container runtime already have working fstab entries from
+# the manual install — sizing above is all they need. Mounting them again
+# here would risk rewriting an already-correct fstab line for no benefit
+# (e.g. a device-naming mismatch reads as "different", forcing a rewrite
+# every run). Logs and application data get their mount+fstab handling in
+# their own dedicated steps, because both are transitions with real data
+# to preserve, not a first-time "mount if declared" case.
