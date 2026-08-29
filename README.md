@@ -29,10 +29,10 @@ atlas/
     hardening/           SSH, firewall, kernel settings, access control, ban rules, unattended updates
     storage/             volume assertion (site.yml) and reconciliation (storage.yml)
     docker/              the rootless runtime, the service user, identity mapping
-    ...                  see technical/ansible-conventions for the full role list    [not yet implemented]
+    shell/               zsh, Starship, vim, port-inspection and volume-usage helpers
 ```
 
-`base`, `hardening`, `storage` and `docker` exist today. Roles land one stacked PR at a time, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
+**Phase 1 / Foundation is complete**: `base`, `hardening`, `storage`, `docker` and `shell` all exist. Phase 2 (`traefik`, `authelia`, `theme`) is next, in the order set by the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
 
 ## How to install and use it? ⚙️
 
@@ -58,6 +58,7 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `inventory/group_vars/all/images.yml` | Every image tag and digest | not yet created |
 | `roles/storage/defaults/main.yml` | `storage_volume_group` and the five managed volumes (mount, size) | `vg_atlas`; see the role for the full list |
 | `roles/docker/defaults/main.yml` | `docker_service_user` and its subordinate UID/GID range | `atlas-docker`; `100000`-`165535` |
+| `roles/shell/defaults/main.yml` | `shell_targets` (admin + root) and the pinned Starship version | see the role |
 | `roles/*/defaults` | Sensible per-role defaults, overridable | see each role |
 | Encrypted values | Secrets, encrypted per value with an age key | not yet needed by any implemented role |
 
