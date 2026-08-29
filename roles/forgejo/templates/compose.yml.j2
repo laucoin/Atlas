@@ -1,0 +1,60 @@
+networks:
+  proxy:
+    external: true
+    name: proxy
+  internal:
+    driver: bridge
+
+services:
+  postgres:
+    image: {{ forgejo_postgres_image }}
+    container_name: forgejo-postgres
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ forgejo_postgres_uid }}:{{ forgejo_postgres_uid }}"
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    environment:
+      POSTGRES_DB: forgejo
+      POSTGRES_USER: forgejo
+      POSTGRES_PASSWORD: "{{ forgejo_postgres_password }}"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  forgejo:
+    image: {{ forgejo_image }}
+    container_name: forgejo
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ forgejo_uid }}:{{ forgejo_uid }}"
+    tmpfs:
+      - /tmp
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:{{ forgejo_http_port }}:{{ forgejo_http_port }}"
+      - "{{ forgejo_ssh_port }}:{{ forgejo_ssh_port }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ forgejo_http_port }}/api/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - ./config/app.ini:/etc/gitea/app.ini:ro
+      - ./data:/data
+      - "{{ forgejo_registry_dir }}:/data/packages"
+    networks:
+      - proxy
+      - internal

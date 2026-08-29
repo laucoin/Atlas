@@ -1,0 +1,65 @@
+---
+# Rootless Docker maps each container's non-zero internal UID to a
+# DIFFERENT host UID than the atlas-docker daemon user — see traefik's
+# and authelia's own fixes for the full reasoning. Anything bind-mounted
+# INTO a container has to be owned by ITS OWN mapped UID.
+- name: Compute each container's host-mapped UID
+  ansible.builtin.set_fact:
+    forgejo_postgres_host_uid: "{{ docker_subuid_start + forgejo_postgres_uid - 1 }}"
+    forgejo_host_uid: "{{ docker_subuid_start + forgejo_uid - 1 }}"
+
+- name: Ensure the forgejo stack directory exists
+  ansible.builtin.file:
+    path: "{{ forgejo_stack_dir }}"
+    state: directory
+    owner: "{{ forgejo_service_user }}"
+    group: "{{ forgejo_service_user }}"
+    mode: "0750"
+
+- name: Ensure the postgres data directory exists, owned for its container
+  ansible.builtin.file:
+    path: "{{ forgejo_stack_dir }}/data/postgres"
+    state: directory
+    owner: "{{ forgejo_postgres_host_uid }}"
+    group: "{{ forgejo_postgres_host_uid }}"
+    mode: "0750"
+
+# Bind-mounted into the forgejo container (./data:/data) — needs the
+# container's own mapped UID, same reasoning as postgres above.
+- name: Ensure the data directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ forgejo_stack_dir }}/data"
+    state: directory
+    owner: "{{ forgejo_host_uid }}"
+    group: "{{ forgejo_host_uid }}"
+    mode: "0750"
+
+# Just a host-side staging directory — docker bind-mounts the individual
+# file inside it, never the directory itself. app.ini gets the
+# container's mapped UID at the point it's rendered (Step 4).
+- name: Ensure the config directory exists
+  ansible.builtin.file:
+    path: "{{ forgejo_stack_dir }}/config"
+    state: directory
+    owner: "{{ forgejo_service_user }}"
+    group: "{{ forgejo_service_user }}"
+    mode: "0750"
+
+# Bind-mounted into the forgejo container at /data/packages — needs the
+# container's own mapped UID, same reasoning as data/ above.
+- name: Ensure the registry directory is owned for the container
+  ansible.builtin.file:
+    path: "{{ forgejo_registry_dir }}"
+    state: directory
+    owner: "{{ forgejo_host_uid }}"
+    group: "{{ forgejo_host_uid }}"
+    mode: "0750"
+
+- name: Render the forgejo Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ forgejo_stack_dir }}/compose.yml"
+    owner: "{{ forgejo_service_user }}"
+    group: "{{ forgejo_service_user }}"
+    mode: "0640"
+  register: forgejo_compose
