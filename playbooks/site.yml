@@ -27,3 +27,5 @@
       tags: [homeassistant]
     - role: observability
       tags: [observability]
+    - role: app
+      tags: [app]

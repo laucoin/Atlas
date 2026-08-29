@@ -45,3 +45,9 @@ observability_loki_image: "grafana/loki:3.7.7"
 observability_alloy_image: "grafana/alloy:v1.19.2"
 observability_grafana_image: "grafana/grafana:13.2.0"
 observability_blackbox_image: "quay.io/prometheus/blackbox-exporter:v0.28.0"
+
+# app — one shared postgres image for every declared application that
+# requests a database; the application's own image is part of its own
+# declaration (atlas_apps), not pinned here, since it's the maintainer's
+# own project rather than a piece of Atlas's own infrastructure.
+app_postgres_image: "postgres:17-alpine"

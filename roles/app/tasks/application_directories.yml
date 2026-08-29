@@ -1,0 +1,21 @@
+---
+- name: Ensure this application's stack directory exists
+  ansible.builtin.file:
+    path: "{{ app_stack_dir }}/{{ app.name }}"
+    state: directory
+    owner: "{{ app_service_user }}"
+    group: "{{ app_service_user }}"
+    mode: "0750"
+
+# Bind-mounted into the application's own container, so it needs that
+# container's own mapped UID, same reasoning as every other bind-mount
+# in this repository — not app_service_user, the atlas-docker daemon's
+# own identity.
+- name: Ensure this application's data directory exists, owned for the container
+  ansible.builtin.file:
+    path: "{{ app_stack_dir }}/{{ app.name }}/data"
+    state: directory
+    owner: "{{ app_host_uid }}"
+    group: "{{ app_host_uid }}"
+    mode: "0750"
+  when: app.storage | default(false)

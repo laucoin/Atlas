@@ -1,0 +1,27 @@
+---
+# One pass through this file per declared application (roles/app/tasks/
+# main.yml's own loop) — everything a single application needs, in
+# order, so registered render results stay valid for that application's
+# own restart-if-changed decisions before the next one begins.
+- name: Validate this application's declaration
+  ansible.builtin.import_tasks: application_assert.yml
+
+- name: Compute this application's identity
+  ansible.builtin.set_fact:
+    app_container_uid: "{{ app.uid | default(app_default_uid) }}"
+    app_subdomain: "{{ app.subdomain | default(app.name) }}"
+    # Staging is always gated regardless of `public`, per functional/
+    # features/app-hosting rule 5. Only a public production application
+    # skips the gate.
+    app_gated: "{{ not ((app.public | default(false)) and app.environment == 'production') }}"
+
+- name: Compute this application's host-mapped UID
+  ansible.builtin.set_fact:
+    app_host_uid: "{{ docker_subuid_start + (app_container_uid | int) - 1 }}"
+
+- name: Ensure this application's directories exist
+  ansible.builtin.import_tasks: application_directories.yml
+
+- name: Provision this application's database
+  ansible.builtin.import_tasks: application_database.yml
+  when: app.database | default(false)

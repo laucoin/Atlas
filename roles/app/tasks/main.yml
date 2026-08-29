@@ -1,0 +1,14 @@
+---
+# include_tasks, not import_tasks — each application needs its own
+# isolated variable scope per iteration (computed UID, subdomain, gate
+# state, registered render results), which only include's dynamic,
+# per-iteration evaluation gives. import_tasks is resolved once at
+# parse time and would share state across every declared application
+# instead of keeping each one self-contained.
+- name: Provision each declared application
+  ansible.builtin.include_tasks: application.yml
+  loop: "{{ atlas_apps }}"
+  loop_control:
+    loop_var: app
+    index_var: app_index
+    label: "{{ app.name | default('(unnamed)') }}"
