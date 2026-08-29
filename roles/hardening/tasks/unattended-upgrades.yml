@@ -1,0 +1,29 @@
+---
+- name: Install unattended upgrades and reboot notification tooling
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - update-notifier-common
+    state: present
+
+- name: Declare the unattended-upgrades policy
+  ansible.builtin.copy:
+    src: 51-atlas-unattended-upgrades.conf
+    dest: /etc/apt/apt.conf.d/51-atlas-unattended-upgrades.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "apt-config -c %s dump"
+  register: hardening_unattended_upgrades_config
+
+- name: Enable the unattended-upgrades service
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+    enabled: true
+    state: started
+
+- name: Restart unattended-upgrades if the policy changed
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+    state: restarted
+  when: hardening_unattended_upgrades_config.changed
