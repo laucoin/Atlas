@@ -26,6 +26,8 @@ alias ".."="cd .."
 alias "..."="cd ../.."
 alias g="git"
 alias sshk="ssh-add -L"
+alias uport="python3 /opt/atlas/scripts/sys_ext.py uport"
+alias kport="python3 /opt/atlas/scripts/sys_ext.py kport"
 
 # Word navigation shortcuts (Option+Arrow / Alt+Arrow)
 bindkey '^[b' backward-word
