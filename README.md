@@ -1,4 +1,8 @@
-# Atlas 🪐
+<div align="center">
+
+# 🪐 Atlas
+
+**A single machine, described entirely in code — a small, opinionated, self-hosted home cloud.**
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=white)
@@ -7,11 +11,54 @@
 ![SOPS](https://img.shields.io/badge/SOPS-2C2C2C)
 ![age](https://img.shields.io/badge/age-2C2C2C)
 
-**Atlas** turns a single machine into a small, opinionated, self-hosted home cloud.
+![Phase 1 · Foundation](https://img.shields.io/badge/Phase%201%20Foundation-complete-brightgreen)
+![Phase 2 · Ingress & identity](https://img.shields.io/badge/Phase%202%20Ingress%20%26%20Identity-complete-brightgreen)
+![Phase 3 · Services](https://img.shields.io/badge/Phase%203%20Services-in%20progress-yellow)
+![Phase 4 · Observability](https://img.shields.io/badge/Phase%204%20Observability-complete-brightgreen)
+![Phase 5 · Backup](https://img.shields.io/badge/Phase%205%20Backup-not%20started-lightgrey)
+
+</div>
+
+## Table of contents
+
+- [This repository](#this-repository-)
+- [How to install and use it?](#how-to-install-and-use-it-)
+  - [Prerequisites & runtime versions](#prerequisites--runtime-versions)
+  - [Configuration variables](#configuration-variables)
+  - [Local setup](#local-setup)
+  - [Build, run, verify](#build-run-verify)
+- [Contributing](#contributing-)
+- [Contributors](#contributors-)
+- [License](#license)
 
 ## This repository 📖
 
 Atlas is a **single Debian node, described entirely in code**: one Ansible repository, no orchestrator. Full specification lives at [doc.laucoin.fr/atlas](https://doc.laucoin.fr/atlas); this repository holds only the implementation, built one role at a time against the [phased plan](https://doc.laucoin.fr/atlas/technical/implementation-plan).
+
+```mermaid
+flowchart LR
+    Internet(("Internet")) -->|"HTTPS, wildcard cert (DNS-01)"| Traefik["Traefik\n(rootless reverse proxy)"]
+    Traefik -->|"SSO gate"| Authelia["Authelia\n(2FA + OIDC provider)"]
+
+    Authelia --> Forgejo["Forgejo\n(git + registry)"]
+    Authelia --> SonarQube["SonarQube\n(code quality)"]
+    Authelia --> HomeAssistant["Home Assistant\n(+ Zigbee2MQTT, Mosquitto)"]
+    Authelia --> Apps["app\n(generic hosted projects)"]
+
+    HomeAssistant -.->|"OIDC sign-in"| Authelia
+
+    subgraph Observability
+        direction LR
+        Alloy["Grafana Alloy"] --> VM["VictoriaMetrics"]
+        Alloy --> Loki["Loki"]
+        Blackbox["blackbox_exporter"] --> VM
+        VM --> Grafana
+        Loki --> Grafana
+        Grafana -.->|"alerts"| Phone(("your phone"))
+    end
+
+    Traefik -.->|"probed by"| Blackbox
+```
 
 ### What's in the box
 
@@ -49,8 +96,12 @@ atlas/
     app/                     the generic hosted-application role — one declaration per project
 ```
 
-**Phase 1 / Foundation, Phase 2 / Ingress and identity, and Phase 4 / Observability are complete in code.** Phase 3 / Services is nearly complete: `forgejo`, `sonarqube`, `homeassistant` and the generic `app` mechanism all exist; `garage` (object storage) and one real application proving `app` end-to-end are on hold pending a second physical node for Garage's own replicated layout. Phase 5 / Backup depends entirely on `garage` and hasn't started. See the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan) for the full phase breakdown. **Nothing has been run against the real host yet** — see the note below.
+Phase 3 / Services is nearly complete: `forgejo`, `sonarqube`, `homeassistant` and the generic `app` mechanism all exist; `garage` (object storage) and one real application proving `app` end-to-end are on hold pending a second physical node for Garage's own replicated layout. Phase 5 / Backup depends entirely on `garage` and hasn't started. See the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan) for the full phase breakdown.
 
+> [!IMPORTANT]
+> **Nothing has been run against the real host yet.** Every phase badge above describes code and open PRs, not a converged machine.
+
+> [!WARNING]
 > **A note on the real host.** SSH reconnaissance while reconciling the `storage` role found Atlas already running a hand-built reference deployment under `/srv` — a privileged (non-rootless) `traefik`, `authentik` rather than `authelia`, TLS-ALPN-01 rather than DNS-01. Confirmed disposable, but Phase 2 stays planning-only (code written, PRs open, nothing converged) until that's resolved deliberately rather than by accident.
 
 ## How to install and use it? ⚙️
@@ -73,6 +124,9 @@ atlas/
 
 Atlas has no `.env` file; configuration is inventory variables and per-value encrypted secrets.
 
+<details>
+<summary>Full variable reference (21 rows) — click to expand</summary>
+
 | Where | Holds | Default |
 | ----- | ----- | ------- |
 | `inventory/hosts.yml` | The `atlas` host declaration | — |
@@ -94,6 +148,8 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 | `inventory/group_vars/all/*.sops.yaml` | Secrets, encrypted per value with an age key via SOPS; auto-decrypted into normal variables during a converge | none yet created — see the full list in [Local setup](#local-setup) below |
 | `.sops.yaml` | Which age key new secrets get encrypted for | `CHANGE_ME_AGE_PUBLIC_KEY` — replace before creating the first secret |
 | `/srv/authelia/assets/{favicon.ico,logo.png}` | Optional Atlas branding for the sign-on portal — Authelia's only supported customisation surface, see `functional/features/unified-theme` | not created; Authelia uses its own if absent |
+
+</details>
 
 ### Local setup
 
