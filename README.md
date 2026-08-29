@@ -205,8 +205,11 @@ Nothing else is Atlas-specific yet; every package beyond a minimal base is the `
 #### 🧰 2. Install the workstation tools
 
 - [ ] **Ansible**, then this repository's collections: `ansible-galaxy collection install -r requirements.yml`
-- [ ] **age** and **sops**
+- [ ] **age** and **sops** — e.g. `brew install age sops` on macOS, or grab the latest release binaries from [FiloSottile/age](https://github.com/FiloSottile/age/releases) and [getsops/sops](https://github.com/getsops/sops/releases) on Linux
 - [ ] A Zigbee coordinator plugged into the host, if you're converging `homeassistant` — find its stable path with `ls -l /dev/serial/by-id/` on the host
+
+> [!WARNING]
+> `sops` runs on the **workstation**, not the host — the `community.sops` vars plugin shells out to it locally every time a play touches an encrypted variable, including `--check` runs. If it's missing you'll see `[ERROR]: Unexpected error in the SOPS vars plugin: [Errno 2] No such file or directory: 'sops'` the moment you run *any* playbook, not just when editing secrets.
 
 #### 🧭 3. Point the inventory at the real machine
 
