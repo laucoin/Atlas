@@ -98,9 +98,6 @@ atlas/
 
 Phase 3 / Services is nearly complete: `forgejo`, `sonarqube`, `homeassistant` and the generic `app` mechanism all exist; `garage` (object storage) and one real application proving `app` end-to-end are on hold pending a second physical node for Garage's own replicated layout. Phase 5 / Backup depends entirely on `garage` and hasn't started. See the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan) for the full phase breakdown.
 
-> [!IMPORTANT]
-> **Nothing has been run against the real host yet.** Every phase badge above describes code and open PRs, not a converged machine.
-
 > [!WARNING]
 > **A note on the real host.** SSH reconnaissance while reconciling the `storage` role found Atlas already running a hand-built reference deployment under `/srv` — a privileged (non-rootless) `traefik`, `authentik` rather than `authelia`, TLS-ALPN-01 rather than DNS-01. Confirmed disposable, but Phase 2 stays planning-only (code written, PRs open, nothing converged) until that's resolved deliberately rather than by accident.
 
@@ -152,36 +149,58 @@ Atlas has no `.env` file; configuration is inventory variables and per-value enc
 
 ### Local setup
 
-#### 1. Install Debian on the host
+```mermaid
+flowchart LR
+    S1["💽<br/>1. Debian<br/>+ LVM"] --> S2["🧰<br/>2. Workstation<br/>tools"]
+    S2 --> S3["🧭<br/>3. Inventory<br/>placeholders"]
+    S3 --> S4["🔐<br/>4. age key<br/>+ SOPS"]
+    S4 --> S5["🗝️<br/>5. Create every<br/>secret"]
+    S5 --> S6["💾<br/>6. Provision<br/>storage"]
+    S6 --> S7["🚀<br/>7. Converge<br/>everything"]
+    S7 --> S8["📱<br/>8. Home Assistant<br/>+ phone alerts"]
+
+    classDef step fill:#4c8bf5,stroke:#2f5fc4,color:#ffffff,rx:6,ry:6
+    class S1,S2,S3,S4,S5,S6,S7,S8 step
+```
+
+#### 💽 1. Install Debian on the host
 
 Install Debian stable normally, with one deliberate choice in the guided partitioner: pick **"Guided — use entire disk and set up LVM"**, and leave the volume group at its default name (or note whatever name you give it — it must match `storage_volume_group` in `roles/storage/defaults/main.yml`, `vg_atlas` by default). Enable the SSH server task during install. Nothing else is Atlas-specific yet; every package beyond a minimal base is the `base` role's job.
 
-Confirm you can reach it: `ssh root@<its address>`.
+> [!TIP]
+> Confirm you can reach it before moving on: `ssh root@<its address>`.
 
-#### 2. Install the workstation tools
+#### 🧰 2. Install the workstation tools
 
-- **Ansible**, then this repository's collections: `ansible-galaxy collection install -r requirements.yml`
-- **age** and **sops**
-- A Zigbee coordinator plugged into the host, if you're converging `homeassistant` — find its stable path with `ls -l /dev/serial/by-id/` on the host.
+- [ ] **Ansible**, then this repository's collections: `ansible-galaxy collection install -r requirements.yml`
+- [ ] **age** and **sops**
+- [ ] A Zigbee coordinator plugged into the host, if you're converging `homeassistant` — find its stable path with `ls -l /dev/serial/by-id/` on the host
 
-#### 3. Point the inventory at the real machine
+#### 🧭 3. Point the inventory at the real machine
 
 In `inventory/host_vars/atlas/main.yml`, replace:
 
-- `ansible_host` — the machine's real address
-- `homeassistant_zigbee_device` — the `/dev/serial/by-id/...` path from step 2
-- `homeassistant_zigbee_adapter` — the coordinator's chipset (`zstack`, `ember`, `deconz`, `zigbee`, or `zboss` — check the coordinator's own documentation)
-- `observability_ha_notify_service` — leave this one as `CHANGE_ME` for now; it isn't obtainable until Home Assistant itself is up (see step 8)
+- [ ] `ansible_host` — the machine's real address
+- [ ] `homeassistant_zigbee_device` — the `/dev/serial/by-id/...` path from step 2
+- [ ] `homeassistant_zigbee_adapter` — the coordinator's chipset (`zstack`, `ember`, `deconz`, `zigbee`, or `zboss` — check the coordinator's own documentation)
+- [ ] `observability_ha_notify_service` — leave this one as `CHANGE_ME` for now; it isn't obtainable until Home Assistant itself is up (see step 8)
 
 In `inventory/group_vars/all/main.yml`, replace `atlas_admin_ssh_public_key` with the maintainer's workstation public key.
 
-#### 4. Set up the age key and SOPS
+#### 🔐 4. Set up the age key and SOPS
 
-The `age` key that decrypts secrets stays on the workstation only; it is never copied to Atlas, and nothing is decrypted at rest on the host.
+> [!TIP]
+> The `age` key that decrypts secrets stays on the workstation only; it is never copied to Atlas, and nothing is decrypted at rest on the host.
 
-Generate it once, if it doesn't already exist: `age-keygen -o ~/.config/sops/age/keys.txt` (SOPS' own default lookup path — no environment variable needed). Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHANGE_ME_AGE_PUBLIC_KEY`.
+Generate it once, if it doesn't already exist:
 
-#### 5. Create every secret
+```bash
+age-keygen -o ~/.config/sops/age/keys.txt   # SOPS' own default lookup path — no environment variable needed
+```
+
+Copy the printed `# public key: age1...` line into `.sops.yaml`, replacing `CHANGE_ME_AGE_PUBLIC_KEY`.
+
+#### 🗝️ 5. Create every secret
 
 Each command below opens an editor on a new encrypted file; write plain YAML, save, and SOPS encrypts it in place using the recipient declared in `.sops.yaml`. Every key becomes a normal Ansible variable afterward — no `lookup()` needed anywhere, per the `community.sops.sops` vars plugin enabled in `ansible.cfg`.
 
@@ -193,9 +212,10 @@ Each command below opens an editor on a new encrypted file; write plain YAML, sa
 | `inventory/group_vars/all/sonarqube.sops.yaml` | `sonarqube_postgres_password` |
 | `inventory/group_vars/all/observability.sops.yaml` | `observability_grafana_admin_password`, `observability_ha_long_lived_token` (see step 8 — this one has to wait) |
 
-A declared `app` entry that requests a database holds its own `postgres_password` inline in its own `atlas_apps` list entry rather than a separate file — SOPS encrypts per value regardless of nesting.
+> [!NOTE]
+> A declared `app` entry that requests a database holds its own `postgres_password` inline in its own `atlas_apps` list entry rather than a separate file — SOPS encrypts per value regardless of nesting.
 
-#### 6. Provision storage
+#### 💾 6. Provision storage
 
 Storage is provisioned once, separately from the everyday converge, and never shrinks:
 
@@ -204,11 +224,11 @@ ansible-playbook playbooks/storage.yml --check --diff
 ansible-playbook playbooks/storage.yml -e storage_confirm=true
 ```
 
-#### 7. Converge everything else
+#### 🚀 7. Converge everything else
 
 See [Build, run, verify](#build-run-verify) below.
 
-#### 8. Finish the two things a converge can't do
+#### 📱 8. Finish the two things a converge can't do
 
 Two short, one-time manual steps remain after the first converge — both are UI-only in current Home Assistant, with no documented non-interactive equivalent:
 
@@ -228,11 +248,42 @@ ansible-playbook playbooks/site.yml --tags theme      # converge one role only
 
 ## Contributing 💻
 
-TODO
+The `main` branch holds validated, review-passed code only.
+
+> [!WARNING]
+> Every change reaches `main` through a stacked pull request — never commit directly to `main`.
+
+Atlas follows **Spec-Driven Development**: the full protocol lives in [`AGENTS.md`](./AGENTS.md), but the short version is:
+
+1. **Spec first.** Every step traces back to a numbered, atomic step in the [implementation plan](https://doc.laucoin.fr/atlas/technical/implementation-plan), with acceptance criteria that are either met or not — never "mostly done". Functional behavior lives in `functional/features/`, the how in `technical/`, both in the separate documentation repository — implementation code never lands there.
+2. **One step, one stacked branch.** `feat/<role>/0N-<step-name>`, branched from step `0N-1` (or `main` for step 1) — e.g. `feat/traefik/02-wildcard-certificate`. Each branch implements *only* that step's scope.
+3. **Micro-diffs.** Max **10 files** / **100 lines** per PR (README/doc sync excluded). A step that doesn't fit is split further.
+4. **No test harness, by design.** [`technical/ansible-conventions`](https://doc.laucoin.fr/atlas/technical/ansible-conventions) replaces it — idempotency is non-negotiable. Before opening a PR:
+   ```bash
+   ansible-playbook playbooks/site.yml --check --diff   # review the plan
+   ansible-playbook playbooks/site.yml                  # apply
+   ansible-playbook playbooks/site.yml                  # re-run immediately: MUST report zero changes
+   ```
+5. **Conventional commits**, scoped to the role or doc section touched: `feat(<scope>): [Step N] <short summary>`.
+6. **Sequential, blocking review.** Step *N+1* never starts before step *N*'s PR is reviewed — `gh pr create --base feat/<role>/0N-1` keeps the stack visible end to end.
+
+Before contributing, please read [`AGENTS.md`](./AGENTS.md) in full — it is the authoritative protocol this section only summarizes.
 
 ## Contributors 🧑‍💻
 
-TODO (all contributor)
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/en/reference/emoji-key/)):
+
+<!-- prettier-ignore-start -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/laucoin"><img src="https://avatars.githubusercontent.com/u/31480129?v=4?s=100" width="100px;" alt="Luc AUCOIN"/><br /><sub><b>Luc AUCOIN</b></sub></a><br /><a href="#projectManagement-laucoin" title="Project Management">📆</a> <a href="#ideas-laucoin" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/laucoin/Atlas/commits?author=laucoin" title="Code">💻</a> <a href="#maintenance-laucoin" title="Maintenance">🚧</a> <a href="#infra-laucoin" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+  </tbody>
+</table>
+<!-- prettier-ignore-end -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome — add a row above, following the same format, in the PR that makes the contribution.
 
 ## License
 
