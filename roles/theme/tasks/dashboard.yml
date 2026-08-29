@@ -1,0 +1,19 @@
+---
+- name: Ensure the dashboard stack directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_service_user }}"
+    group: "{{ docker_service_user }}"
+    mode: "0750"
+  loop:
+    - "{{ theme_dashboard_stack_dir }}"
+    - "{{ theme_dashboard_stack_dir }}/html"
+
+- name: Render the dashboard
+  ansible.builtin.template:
+    src: dashboard.html.j2
+    dest: "{{ theme_dashboard_stack_dir }}/html/index.html"
+    owner: "{{ docker_service_user }}"
+    group: "{{ docker_service_user }}"
+    mode: "0644"

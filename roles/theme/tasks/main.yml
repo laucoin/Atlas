@@ -17,3 +17,6 @@
 
 - name: Render the error-pages stack
   ansible.builtin.import_tasks: error_pages_stack.yml
+
+- name: Render the dashboard
+  ansible.builtin.import_tasks: dashboard.yml

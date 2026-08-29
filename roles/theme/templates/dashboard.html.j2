@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas</title>
+<style>
+  :root {
+    --atlas-accent: {{ atlas_palette.light.accent }};
+    --atlas-background: {{ atlas_palette.light.background }};
+    --atlas-surface: {{ atlas_palette.light.surface }};
+    --atlas-border: {{ atlas_palette.light.border }};
+    --atlas-text: {{ atlas_palette.light.text }};
+    --atlas-text-muted: {{ atlas_palette.light.text_muted }};
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --atlas-accent: {{ atlas_palette.dark.accent }};
+      --atlas-background: {{ atlas_palette.dark.background }};
+      --atlas-surface: {{ atlas_palette.dark.surface }};
+      --atlas-border: {{ atlas_palette.dark.border }};
+      --atlas-text: {{ atlas_palette.dark.text }};
+      --atlas-text-muted: {{ atlas_palette.dark.text_muted }};
+    }
+  }
+  body {
+    margin: 0;
+    padding: 3rem 2rem;
+    background: var(--atlas-background);
+    color: var(--atlas-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  h1 { color: var(--atlas-accent); margin: 0 0 1.5rem; }
+  .services {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    max-width: 960px;
+  }
+  .service {
+    display: block;
+    padding: 1.5rem;
+    border: 1px solid var(--atlas-border);
+    border-radius: 12px;
+    background: var(--atlas-surface);
+    text-decoration: none;
+    color: inherit;
+  }
+  .service h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+  .service p { margin: 0; color: var(--atlas-text-muted); font-size: 0.9rem; }
+  .empty { color: var(--atlas-text-muted); }
+</style>
+</head>
+<body>
+  <h1>Atlas</h1>
+{% if atlas_services %}
+  <div class="services">
+{% for service in atlas_services %}
+    <a class="service" href="https://{{ service.subdomain }}.atlas.{{ atlas_domain }}">
+      <h2>{{ service.name }}</h2>
+      <p>{{ service.description }}</p>
+    </a>
+{% endfor %}
+  </div>
+{% else %}
+  <p class="empty">No services declared yet.</p>
+{% endif %}
+</body>
+</html>
