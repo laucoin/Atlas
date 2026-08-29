@@ -1,0 +1,23 @@
+apiVersion: 1
+
+contactPoints:
+  - name: phone
+    receivers:
+      - uid: phone-homeassistant
+        type: webhook
+        settings:
+          url: "http://homeassistant:{{ homeassistant_http_port }}/api/services/notify/{{ observability_ha_notify_service }}"
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: "{{ observability_ha_long_lived_token }}"
+          # Full custom payload — Home Assistant's notify API expects
+          # exactly {"message": ..., "title": ...}, not Grafana's own
+          # default webhook shape. The raw block below exists because
+          # Grafana's own notification template syntax uses the same
+          # double-curly-brace delimiter Jinja2 does.
+          payload:
+            template: |
+              {% raw %}{
+                "title": "Atlas: {{ .CommonLabels.alertname }}",
+                "message": "{{ .CommonAnnotations.summary }}"
+              }{% endraw %}

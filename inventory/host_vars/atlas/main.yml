@@ -18,3 +18,11 @@ homeassistant_zigbee_device: CHANGE_ME
 # zstack, ember, deconz, zigbee (ZiGate) or zboss. Check the coordinator's
 # own documentation. Replace before the first converge.
 homeassistant_zigbee_adapter: CHANGE_ME
+
+# The Home Assistant Companion app's own notify service name (e.g.
+# mobile_app_lucs_iphone) — assigned when the app is installed and
+# registered, not something Ansible can discover or invent ahead of
+# that. Find it under Settings -> Devices & Services -> your phone's
+# entry, or Developer Tools -> Actions, searching for "notify". Replace
+# once the companion app has been installed.
+observability_ha_notify_service: CHANGE_ME

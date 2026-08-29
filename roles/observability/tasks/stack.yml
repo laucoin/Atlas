@@ -112,6 +112,7 @@
     - data
     - provisioning/datasources
     - provisioning/dashboards
+    - provisioning/alerting
     - dashboards
 
 - name: Render Grafana's datasource provisioning
@@ -143,6 +144,33 @@
     group: "{{ observability_grafana_host_uid }}"
     mode: "0640"
   register: observability_grafana_dashboards
+
+- name: Render Grafana's alerting contact points
+  ansible.builtin.template:
+    src: grafana-contactpoints.yaml.j2
+    dest: "{{ observability_stack_dir }}/grafana/provisioning/alerting/contactpoints.yaml"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_contactpoints
+
+- name: Render Grafana's alerting notification policies
+  ansible.builtin.template:
+    src: grafana-notification-policies.yaml.j2
+    dest: "{{ observability_stack_dir }}/grafana/provisioning/alerting/notification-policies.yaml"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_notification_policies
+
+- name: Render Grafana's alert rules
+  ansible.builtin.template:
+    src: grafana-alert-rules.yaml.j2
+    dest: "{{ observability_stack_dir }}/grafana/provisioning/alerting/rules.yaml"
+    owner: "{{ observability_grafana_host_uid }}"
+    group: "{{ observability_grafana_host_uid }}"
+    mode: "0640"
+  register: observability_grafana_alert_rules
 
 - name: Render the observability Compose file
   ansible.builtin.template:

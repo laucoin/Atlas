@@ -1,0 +1,126 @@
+apiVersion: 1
+
+# Only the five immediate-tier conditions functional/features/
+# observability rule 3 names that this repository can actually detect
+# today. A failed backup is deliberately absent — nothing produces
+# that signal yet, since backup itself is a later Phase 5 concern that
+# hasn't landed. Add it here once that lands, rather than alerting on
+# a metric that doesn't exist.
+groups:
+  - name: atlas-immediate
+    folder: Atlas
+    interval: 1m
+    rules:
+      - uid: atlas-host-down
+        title: Host stopped reporting
+        condition: A
+        for: 5m
+        noDataState: Alerting
+        execErrState: Alerting
+        annotations:
+          summary: "The host has stopped reporting metrics — the collection agent, or the host itself, may be down."
+        labels:
+          severity: immediate
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              expr: "node_boot_time_seconds"
+              instant: true
+              range: false
+
+      - uid: atlas-volume-above-85
+        title: Volume above 85%
+        condition: A
+        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: "A volume has crossed 85% usage. Check the host-overview dashboard for which one."
+        labels:
+          severity: immediate
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              expr: "(1 - (node_filesystem_avail_bytes{fstype!=\"tmpfs\"} / node_filesystem_size_bytes{fstype!=\"tmpfs\"})) > 0.85"
+              instant: true
+              range: false
+
+      - uid: atlas-cert-expiring
+        title: Certificate expiring within 7 days
+        condition: A
+        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: "A certificate is expiring within 7 days. Check the host-overview dashboard for which service."
+        labels:
+          severity: immediate
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              expr: "probe_ssl_earliest_cert_expiry - time() < 7 * 86400"
+              instant: true
+              range: false
+
+      - uid: atlas-service-down
+        title: Published service failing
+        condition: A
+        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: "A published service has been failing for over 5 minutes. Check the host-overview dashboard for which one."
+        labels:
+          severity: immediate
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              expr: "probe_success == 0"
+              instant: true
+              range: false
+
+      - uid: atlas-repeated-auth-failures
+        title: Repeated authentication failures
+        condition: A
+        for: 0m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: "More than 5 failed sign-in attempts in the last 15 minutes."
+        labels:
+          severity: immediate
+        data:
+          - refId: A
+            queryType: instant
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: "count_over_time({container=\"authelia\"} |= \"Unsuccessful\" |= \"authentication attempt\" [15m]) > 5"

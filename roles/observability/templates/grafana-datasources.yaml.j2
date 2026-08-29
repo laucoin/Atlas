@@ -1,12 +1,17 @@
 apiVersion: 1
 
 datasources:
+  # Explicit, stable UIDs — not left to auto-generation — so alert
+  # rules (05-alerting) have something fixed to reference instead of a
+  # value only discoverable after the fact.
   - name: VictoriaMetrics
+    uid: victoriametrics
     type: prometheus
     url: "http://victoriametrics:{{ observability_victoriametrics_port }}"
     access: proxy
     isDefault: true
   - name: Loki
+    uid: loki
     type: loki
     url: "http://loki:{{ observability_loki_port }}"
     access: proxy

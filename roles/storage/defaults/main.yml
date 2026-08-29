@@ -3,8 +3,8 @@ storage_volume_group: vg_atlas
 
 # System, var and swap already exist from the manual Debian install —
 # asserted and grown like every other declared volume, never created.
-# Object storage isn't declared yet: it's a Phase 3 concern (garage),
-# added here once that role actually lands.
+# Object storage isn't declared yet: it's a later Phase 3 service, added
+# here once that role actually lands.
 storage_volumes:
   - name: system
     lv: lv_root

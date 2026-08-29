@@ -1,0 +1,18 @@
+apiVersion: 1
+
+# Only two tiers, and only one is ever actively pushed (rule 3): every
+# alert RULE declared in this repository is, by construction, an
+# immediate-tier condition — so the single default route covers all of
+# them and no sub-routing tree is needed. The "daily summary" tier
+# isn't a second set of rules routed to a muted receiver; it's simply
+# not alerted on at all — e.g. a container restart is visible on the
+# host-overview dashboard's systemd panel (03-grafana) for whoever
+# checks it, with no rule ever firing for it. Reviewed-when-checked
+# rather than pushed, not a gap.
+policies:
+  - receiver: phone
+    group_by:
+      - alertname
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
