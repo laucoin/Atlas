@@ -189,6 +189,16 @@ In the manual partitioner:
 
 Nothing else is Atlas-specific yet; every package beyond a minimal base is the `base` role's job.
 
+> [!WARNING]
+> The bootstrap converge connects as `root` (`ansible_user: root` in `inventory/host_vars/atlas/main.yml`) — the admin account doesn't exist yet, only the `base` role creates it. But Debian's default `sshd_config` ships `PermitRootLogin prohibit-password`: root can only log in with a key, never a password, whether or not you set a root password during install. `ssh root@<its address>` will fail with "permission denied" until root actually has your workstation's public key authorized. Fix it once, right after install, from whichever account can already reach the machine (your own admin account, if you enabled SSH key import during install, or a local console session):
+> ```bash
+> ssh <your-user>@<its address>                              # or work at the local console instead
+> sudo install -d -m 700 -o root -g root /root/.ssh
+> sudo sh -c 'cat >> /root/.ssh/authorized_keys' <<< "$(cat ~/.ssh/id_ed25519.pub)"   # your workstation's public key
+> sudo chmod 600 /root/.ssh/authorized_keys
+> ```
+> `hardening` sets `PermitRootLogin no` on the first converge, closing this off again — it's a one-time bootstrap step, not a standing exception.
+
 > [!TIP]
 > Confirm you can reach it before moving on: `ssh root@<its address>`.
 
