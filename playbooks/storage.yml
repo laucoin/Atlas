@@ -26,3 +26,8 @@
       ansible.builtin.import_role:
         name: storage
         tasks_from: remount_application_data
+
+    - name: Mount any newly-declared volume
+      ansible.builtin.import_role:
+        name: storage
+        tasks_from: mount_new_volumes
