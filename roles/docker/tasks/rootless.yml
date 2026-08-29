@@ -1,0 +1,45 @@
+---
+- name: Check whether linger is already enabled
+  ansible.builtin.stat:
+    path: "/var/lib/systemd/linger/{{ docker_service_user }}"
+  register: docker_linger
+
+- name: Enable linger so the rootless runtime survives a reboot
+  ansible.builtin.command: "loginctl enable-linger {{ docker_service_user }}"
+  changed_when: true
+  when: not docker_linger.stat.exists
+
+- name: Check whether the rootless runtime is already installed
+  ansible.builtin.stat:
+    path: "{{ docker_service_account.home }}/.config/systemd/user/docker.service"
+  register: docker_rootless_unit
+
+- name: Install the rootless Docker runtime
+  ansible.builtin.command: dockerd-rootless-setuptool.sh install --skip-iptables
+  become: true
+  become_user: "{{ docker_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ docker_service_account.uid }}"
+    PATH: "/usr/bin:/usr/sbin:{{ ansible_env.PATH }}"
+  when: not docker_rootless_unit.stat.exists
+
+- name: Enable and start the rootless Docker service
+  ansible.builtin.systemd:
+    name: docker
+    scope: user
+    enabled: true
+    state: started
+  become: true
+  become_user: "{{ docker_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ docker_service_account.uid }}"
+
+- name: Verify the rootless runtime can run a container
+  ansible.builtin.command: docker run --rm hello-world
+  become: true
+  become_user: "{{ docker_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ docker_service_account.uid }}"
+    DOCKER_HOST: "unix:///run/user/{{ docker_service_account.uid }}/docker.sock"
+    PATH: "/usr/bin:/usr/sbin:{{ ansible_env.PATH }}"
+  changed_when: false
