@@ -6,7 +6,7 @@ networks:
 services:
   error-pages:
     image: {{ theme_error_pages_image }}
-    container_name: atlas-error-pages
+    container_name: {{ theme_error_pages_container }}
     restart: unless-stopped
     read_only: true
     security_opt:

@@ -32,3 +32,5 @@ atlas_palette:
 theme_error_pages_stack_dir: /srv/theme/error-pages
 theme_error_pages_uid: 2010
 theme_error_pages_image: "nginx:alpine"
+theme_error_pages_port: 8080
+theme_error_pages_container: atlas-error-pages

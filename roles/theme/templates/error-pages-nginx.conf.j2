@@ -2,7 +2,7 @@ events {}
 
 http {
   server {
-    listen 8080;
+    listen {{ theme_error_pages_port }};
     location / {
       root /usr/share/nginx/html;
       try_files /error.html =404;

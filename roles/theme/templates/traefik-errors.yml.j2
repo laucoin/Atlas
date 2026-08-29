@@ -1,0 +1,14 @@
+http:
+  middlewares:
+    atlas-errors:
+      errors:
+        status:
+          - "400-599"
+        service: error-pages
+        query: "/error.html"
+
+  services:
+    error-pages:
+      loadBalancer:
+        servers:
+          - url: "http://{{ theme_error_pages_container }}:{{ theme_error_pages_port }}"
