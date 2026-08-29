@@ -23,3 +23,5 @@
       tags: [forgejo]
     - role: sonarqube
       tags: [sonarqube]
+    - role: homeassistant
+      tags: [homeassistant]

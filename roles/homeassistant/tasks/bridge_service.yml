@@ -1,0 +1,40 @@
+---
+- name: Look up the docker service user's UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ homeassistant_service_user }}"
+
+- name: Set the docker service user's UID as a fact
+  ansible.builtin.set_fact:
+    homeassistant_service_uid: "{{ ansible_facts.getent_passwd[homeassistant_service_user][1] }}"
+
+- name: Render the bridge systemd unit
+  ansible.builtin.template:
+    src: bridge.service.j2
+    dest: /etc/systemd/system/homeassistant-bridge.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: homeassistant_bridge_unit
+
+- name: Reload systemd if the unit changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: homeassistant_bridge_unit.changed
+
+- name: Enable and start the bridge stack
+  ansible.builtin.systemd:
+    name: homeassistant-bridge
+    enabled: true
+    state: started
+
+# Deliberately NOT restarted when zigbee2mqtt's own configuration.yaml
+# changes — after its first render that file belongs to zigbee2mqtt
+# itself (see bridge_stack.yml), so there's nothing here to react to.
+- name: Restart the bridge stack if its own configuration changed
+  ansible.builtin.systemd:
+    name: homeassistant-bridge
+    state: restarted
+  when: >-
+    homeassistant_bridge_compose.changed or homeassistant_bridge_unit.changed or
+    homeassistant_mosquitto_configuration.changed

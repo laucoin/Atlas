@@ -1,0 +1,6 @@
+---
+- name: Render the Zigbee bridge stack
+  ansible.builtin.import_tasks: bridge_stack.yml
+
+- name: Activate the Zigbee bridge service
+  ansible.builtin.import_tasks: bridge_service.yml

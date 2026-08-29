@@ -1,0 +1,21 @@
+version: 5
+mqtt:
+  base_topic: zigbee2mqtt
+  server: "mqtt://mosquitto:{{ homeassistant_mosquitto_port }}"
+serial:
+  port: /dev/ttyACM0
+  adapter: "{{ homeassistant_zigbee_adapter }}"
+# Publishes MQTT discovery topics Home Assistant's own MQTT integration
+# picks up automatically — device management (pairing, renaming) happens
+# from Home Assistant's interface, not a separate one.
+homeassistant:
+  enabled: true
+# No separate web UI: nothing here needs its own route or its own
+# gate exception, and it would be one more thing to hold behind
+# forwardAuth for no functional gain.
+frontend:
+  enabled: false
+advanced:
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE

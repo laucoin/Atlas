@@ -1,0 +1,58 @@
+networks:
+  # Not external: this stack is the one that creates it. Home Assistant's
+  # own stack joins it as external, the same "one stack creates, others
+  # join" pattern traefik's "proxy" network already established.
+  homeassistant-internal:
+    name: "{{ homeassistant_bridge_network }}"
+    driver: bridge
+
+services:
+  mosquitto:
+    image: {{ homeassistant_mosquitto_image }}
+    container_name: mosquitto
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ homeassistant_mosquitto_uid }}:{{ homeassistant_mosquitto_uid }}"
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/data:/mosquitto/data
+    networks:
+      - homeassistant-internal
+
+  zigbee2mqtt:
+    image: {{ homeassistant_zigbee2mqtt_image }}
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "{{ homeassistant_zigbee2mqtt_uid }}:{{ homeassistant_zigbee2mqtt_uid }}"
+    # Grants access to the passed-through serial device without the
+    # broader privileged: true the coordinator's own quickstart docs
+    # default to — the device itself is the only thing this container
+    # needs from the host.
+    group_add:
+      - dialout
+    devices:
+      - "{{ homeassistant_zigbee_device }}:/dev/ttyACM0"
+    volumes:
+      - /run/udev:/run/udev:ro
+      # configuration.yaml lives inside this same directory, not a
+      # separate mount — zigbee2mqtt rewrites it with its generated
+      # network key after first boot, so it has to sit somewhere the
+      # container can actually write, not a read-only bind mount.
+      - ./zigbee2mqtt/data:/app/data
+    tmpfs:
+      - /tmp
+    depends_on:
+      - mosquitto
+    networks:
+      - homeassistant-internal
