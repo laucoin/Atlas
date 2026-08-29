@@ -45,3 +45,9 @@ hardening_sysctl_settings:
   # Declared explicitly, not just left at the Debian default: the rootless
   # Docker runtime (a later role) requires unprivileged user namespaces.
   kernel.unprivileged_userns_clone: 1
+
+# Authelia and home automation add their own jails once those roles exist;
+# SSH is the only authentication surface in this phase.
+hardening_fail2ban_bantime: 3600
+hardening_fail2ban_findtime: 600
+hardening_fail2ban_maxretry: 5
